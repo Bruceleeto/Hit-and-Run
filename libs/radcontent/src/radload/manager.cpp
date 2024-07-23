@@ -65,7 +65,6 @@ m_pFileLoaders( NULL ),
 m_pDataLoaders( NULL ),
 m_pLoadQueue( NULL ),
 m_pThread( NULL ),
-m_pSemaphore( NULL ),
 m_pMutex( NULL )
 {
     // Make our hash tables so that they will never resize or repack
@@ -78,8 +77,8 @@ m_pMutex( NULL )
     m_pCallbacks = new RefQueue<radLoadCallback>( 32 );
     m_pCallbacks ->AddRef();
 
-    ::radThreadCreateSemaphore( &m_pSemaphore );
     ::radThreadCreateMutex( &m_pMutex );
+    m_pMutex->Lock();
     ::radThreadCreateThread( &m_pThread, radLoadManager::LoadThreadEntry, static_cast<void*>(this), IRadThread::PriorityNormal, init.loadThreadStackSize );
 
 #ifdef RADLOAD_GATHER_STATS
@@ -105,7 +104,6 @@ radLoadManager::~radLoadManager()
 
 void radLoadManager::AddCallback( radLoadCallback* callback )
 {
-    m_pMutex->Lock();
     if( callback )
     {
         callback->AddRef();
@@ -119,7 +117,6 @@ void radLoadManager::AddCallback( radLoadCallback* callback )
             m_pLoadQueue->Push( callback );
         }
     }
-    m_pMutex->Unlock();
 }
 
 void radLoadManager::AddDataLoader( radLoadDataLoader* dataLoader, radLoadClassID id )
@@ -136,7 +133,6 @@ void radLoadManager::Cancel()
 {
     unsigned int i = 0;
 
-    m_pMutex->Lock();
     while( !m_pLoadQueue->Empty() )
     {
        radLoadObject* obj = m_pLoadQueue->Pop();
@@ -151,7 +147,6 @@ void radLoadManager::Cancel()
     {
         m_pCurrent->Cancel();
     }
-    m_pMutex->Unlock();
 }
 
 radLoadDataLoader* radLoadManager::GetDataLoader( radLoadClassID id )
@@ -245,9 +240,7 @@ void radLoadManager::InternalService()
         }
         else
         {
-            m_pMutex->Unlock();
-            m_pSemaphore->Wait();
-            m_pMutex->Lock();
+            SwitchTasks();
         }
     }
     m_pMutex->Unlock();
@@ -277,7 +270,6 @@ void radLoadManager::Load( radLoadOptions* options, radLoadRequest** request )
     QueueItem* item = new QueueItem( *options );
     ::radMemorySetCurrentAllocator( old );
     item->AddRef();
-    m_pMutex->Lock();
     m_pLoadQueue->Push( item );
     item->SetState( QUEUED );
     *request = static_cast<radLoadRequest*>(item);
@@ -285,7 +277,6 @@ void radLoadManager::Load( radLoadOptions* options, radLoadRequest** request )
     {
         item->SetStream( options->stream );
     }
-    m_pMutex->Unlock();
     if( options->syncLoad )
     {
         while( item->GetState() != COMPLETE )
@@ -313,16 +304,12 @@ unsigned int radLoadManager::LoadThreadEntry( void* data )
 
 float radLoadManager::PercentDone()
 {
-    m_pMutex->Lock();
     if( m_pLoadQueue->Empty() )
     {
-        m_pMutex->Unlock();
         return 1.0f;
     }
     // While hardly the most accurate number out there, it'll work for now.
-    const float size = 1.0f / static_cast<float>(m_pLoadQueue->Size());
-    m_pMutex->Unlock();
-    return size;
+    return 1.0f / static_cast<float>(m_pLoadQueue->Size());
 }
 
 void radLoadManager::PrintStats()
@@ -398,13 +385,13 @@ void radLoadManager::SetSyncLoading( bool sync )
 
 void radLoadManager::SwitchTasks()
 {
-    m_pSemaphore->Signal();
+    m_pMutex->Unlock();
     radThreadSleep(0);
+    m_pMutex->Lock();
 }
 
 void radLoadManager::Terminate()
 {
-    m_pMutex->Lock();
     m_pFileLoaders->Release();
     m_pDataLoaders->Release();
     rAssert( m_pLoadQueue->Empty() );
@@ -412,11 +399,9 @@ void radLoadManager::Terminate()
     m_pCallbacks->Release();
     m_bDone = true;
     m_pMutex->Unlock();
-    m_pSemaphore->Signal();
     m_pThread->WaitForTermination();
     m_pThread->Release();
 
-    m_pSemaphore->Release();
     m_pMutex->Release();
 
     delete this;
