@@ -1203,12 +1203,24 @@ target_link_libraries(radcontent
 	pddi
 )
 
+option(SRR2_P3D_CG ON)
+set(SRR2_P3D_CG_PATH "C:/Program Files (x86)/NVIDIA Corporation/Cg")
 add_library(pddi STATIC ${PDDI_SOURCES})
 target_include_directories(pddi PUBLIC "libs/pure3d/")
 if(SRR2_P3D_PDDI STREQUAL GLES2)
 	target_include_directories(pddi PRIVATE "libs/pure3d/pddi/gles/glad/include/")
 else()
 	target_include_directories(pddi PRIVATE "libs/pure3d/pddi/gl/glad/include/")
+endif()
+if(SRR2_P3D_CG)
+	add_compile_definitions(RAD_CG)
+	target_include_directories(pddi PRIVATE "${SRR2_P3D_CG_PATH}/include/")
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		target_link_directories(pddi PUBLIC "${SRR2_P3D_CG_PATH}/lib.x64/")
+	else()
+		target_link_directories(pddi PUBLIC "${SRR2_P3D_CG_PATH}/lib/")
+	endif()
+	target_link_libraries(pddi cg cgGL)
 endif()
 target_link_libraries(pddi
 	SDL2::SDL2

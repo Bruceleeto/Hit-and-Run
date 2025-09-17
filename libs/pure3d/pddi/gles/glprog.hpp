@@ -11,16 +11,25 @@
 #include <pddi/gles/gl.hpp>
 struct pglTextureEnv;
 
+#ifdef RAD_CG
+#include <Cg/cg.h>    /* Can't include this?  Is Cg Toolkit installed! */
+#endif
+
 class pglProgram : public pddiObject
 {
 public:
     pglProgram();
     ~pglProgram();
 
-    GLuint GetProgram() { return program; }
-    bool LinkProgram(GLuint vertexShader, GLuint fragmentShader);
-    static bool CompileShader(GLuint shader, const char* source);
+#ifdef RAD_CG
+    void UseProgram();
+    static CGprogram CompileShader(GLenum type, const char* source);
+    static pglProgram* CreateProgram(CGprogram vertexShader, CGprogram fragmentShader);
+#else
+    void UseProgram() { glUseProgram(program); }
+    static GLuint CompileShader(GLenum type, const char* source);
     static pglProgram* CreateProgram(GLuint vertexShader, GLuint fragmentShader);
+#endif
 
     void SetProjectionMatrix(const pddiMatrix* matrix);
     void SetModelViewMatrix(const pddiMatrix* matrix);
@@ -32,6 +41,24 @@ public:
     inline bool SupportsTextures() { return sampler >= 0; }
 
 protected:
+#ifdef RAD_CG
+    bool LinkProgram(CGprogram vertexShader, CGprogram fragmentShader);
+
+    static void checkForCgError();
+    static CGcontext context;
+    static CGprofile vertexProfile, fragmentProfile;
+
+    CGprogram program;
+
+    // Uniform locations
+    CGparameter projection, modelview, normalmatrix, alpharef, sampler;
+    struct {
+        CGparameter enabled, position, colour, attenuation;
+    } lights[PDDI_MAX_LIGHTS];
+    CGparameter acs, acm, dcm, scm, ecm, srm;
+#else
+    bool LinkProgram(GLuint vertexShader, GLuint fragmentShader);
+
     GLuint program;
 
     // Uniform locations
@@ -40,6 +67,7 @@ protected:
         GLint enabled, position, colour, attenuation;
     } lights[PDDI_MAX_LIGHTS];
     GLint acs, acm, dcm, scm, ecm, srm;
+#endif
 };
 
 #endif

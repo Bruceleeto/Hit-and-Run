@@ -307,9 +307,14 @@ bool Win32Platform::InitializeWindow()
 #endif
 
     // These attributes must be set prior to creating the first window
-#ifdef RAD_GLES
+#if RAD_GLES
+#if RAD_CG
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
+#else
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES );
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, RAD_GLES_VERSION );
+#endif
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
 #else
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );

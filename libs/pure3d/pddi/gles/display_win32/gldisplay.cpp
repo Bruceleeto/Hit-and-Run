@@ -180,8 +180,13 @@ bool pglDisplay ::InitDisplay(const pddiDisplayInit* init)
         SDL_Log("SDL_GL_CreateContext() error: %s", SDL_GetError());
     PDDIASSERT(hRC);
 
-    if (!gladLoadGLES2Loader( (GLADloadproc)SDL_GL_GetProcAddress ))
+#ifdef RAD_CG
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
         return false;
+#else
+    if (!gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress))
+        return false;
+#endif
 
     char* glVendor   = (char*)glGetString(GL_VENDOR);
     char* glRenderer = (char*)glGetString(GL_RENDERER);

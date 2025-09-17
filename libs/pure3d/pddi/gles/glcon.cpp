@@ -85,8 +85,116 @@ pglContext::pglContext(pglDevice* dev, pglDisplay* disp) : pddiBaseContext((pddi
     extContext = new pglExtContext(display);
     extGamma = new pglExtGamma(display);
 
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    pglProgram::CompileShader(vertexShader,
+#ifdef RAD_CG
+    CGprogram vertexShader = pglProgram::CompileShader(GL_VERTEX_SHADER,
+        "void main(float3 position : ATTR0,\n"
+        "          float3 normal : ATTR1,\n"
+        "          float2 texcoord : ATTR2,\n"
+        "          float4 color : ATTR3,\n"
+        "          out float4 oPosition : POSITION,\n"
+        "          out float2 tc : TEXCOORD0,\n"
+        "          out float4 cpri : COLOR0,\n"
+        "          out float4 csec : COLOR1,\n"
+        "          uniform float4x4 projection,\n"
+        "          uniform float4x4 modelview) {\n"
+        "    float4 V = mul(modelview, float4(position, 1.0));\n"
+        "    tc = texcoord;\n"
+        "    cpri = color;\n"
+        "    csec = float4(0.0, 0.0, 0.0, 0.0);\n"
+        "    oPosition = mul(projection, V);\n"
+        "}\n"
+    );
+
+    CGprogram litShader = pglProgram::CompileShader(GL_VERTEX_SHADER,
+        "typedef struct {\n"
+        "    int enabled;\n"
+        "    float4 position;\n"
+        "    float4 colour;\n"
+        "    float3 attenuation;\n"
+        "} LightParams;\n"
+
+        "float3 direction(float4 p1, float4 p2) { return normalize(p2.xyz * sign(p1.w) - p1.xyz * sign(p2.w)); }\n"
+        "float power(float x, float y) { return y != 0.0 ? pow(x,y) : 1.0; }\n"
+        "float product(float3 x, float3 y) { return max(dot(x,y), 0.0); }\n"
+
+        "void main(float3 position      : ATTR0,\n"
+        "          float3 normal        : ATTR1,\n"
+        "          float2 texcoord      : ATTR2,\n"
+        "          float4 color         : ATTR3,\n"
+        "          out float4 oPosition : POSITION,\n"
+        "          out float2 tc        : TEXCOORD0,\n"
+        "          out float4 cpri      : COLOR0,\n"
+        "          out float4 csec      : COLOR1,\n"
+        "          uniform float4x4 projection,\n"
+        "          uniform float4x4 modelview,\n"
+        "          uniform float4x4 normalmatrix,\n"
+        "          uniform float4 acs,\n"
+        "          uniform float4 acm,\n"
+        "          uniform float4 dcm,\n"
+        "          uniform float4 scm,\n"
+        "          uniform float4 ecm,\n"
+        "          uniform float srm,\n"
+        "          uniform LightParams lights[" PDDI_STRINGIZE( PDDI_MAX_LIGHTS ) "]) {\n"
+        "    float4 V = mul(modelview, float4(position, 1.0));\n"
+        "    float3 n = normalize(mul(float3x3(normalmatrix), normal));\n"
+
+        "    float3 diff = ecm.rgb + acm.rgb * acs.rgb;\n"
+        "    float3 spec = float3(0.0);\n"
+        "    for (int i = 0; i < " PDDI_STRINGIZE(PDDI_MAX_LIGHTS) "; i++) {\n"
+        "        if (lights[i].enabled == 0) continue;\n"
+
+        "        float3 VP = direction(V, lights[i].position);\n"
+        "        float f = product(n,VP) != 0.0 ? 1.0 : 0.0;\n"
+        "        float3 h = normalize(VP + float3(0.0, 0.0, 1.0));\n"
+
+        "        float3 k = lights[i].attenuation;\n"
+        "        float d = distance(V.xyz, lights[i].position.xyz);\n"
+        "        float att = lights[i].position.w != 0.0 ? 1.0 / (k[0] + k[1] * d + k[2] * d * d) : 1.0;\n"
+
+        "        diff += att * product(n,VP) * dcm.rgb * lights[i].colour.rgb;\n"
+        "        spec += att * f * power(product(n,h),srm) * scm.rgb * lights[i].colour.rgb;\n"
+        "    }\n"
+
+        "    tc = texcoord;\n"
+        "    cpri = color * float4(diff, dcm.a);\n"
+        "    csec = float4(spec, 0.0);\n"
+        "    oPosition = mul(projection, V);\n"
+        "}\n"
+    );
+
+    CGprogram fragmentShader = pglProgram::CompileShader( GL_FRAGMENT_SHADER,
+        "void main(float2 tc        : TEXCOORD0,\n"
+        "          float4 cpri      : COLOR0,\n"
+        "          float4 csec      : COLOR1,\n"
+        "          out float4 color : COLOR) {\n"
+        "    color = cpri + csec;\n"
+        "}\n"
+    );
+
+    CGprogram textureShader = pglProgram::CompileShader(GL_FRAGMENT_SHADER,
+        "void main(float2 tc : TEXCOORD0,\n"
+        "          float4 cpri : COLOR0,\n"
+        "          float4 csec : COLOR1,\n"
+        "          out float4 color : COLOR,\n"
+        "          uniform sampler2D tex) {\n"
+        "    color = tex2D(tex, tc) * cpri + csec;\n"
+        "}\n"
+    );
+
+    CGprogram alphaTestShader = pglProgram::CompileShader(GL_FRAGMENT_SHADER,
+        "void main(float2 tc : TEXCOORD0,\n"
+        "          float4 cpri : COLOR0,\n"
+        "          float4 csec : COLOR1,\n"
+        "          out float4 color : COLOR,\n"
+        "          uniform float alpharef,\n"
+        "          uniform sampler2D tex) {\n"
+        "    float4 c = tex2D(tex, tc) * cpri + csec;\n"
+        "    if (c.a < alpharef) discard;\n"
+        "    color = c;\n"
+        "}\n"
+    );
+#else
+    GLuint vertexShader = pglProgram::CompileShader(GL_VERTEX_SHADER,
         "precision highp float;\n"
 
         "attribute vec3 position;\n"
@@ -110,8 +218,7 @@ pglContext::pglContext(pglDevice* dev, pglDisplay* disp) : pddiBaseContext((pddi
         "}\n"
     );
 
-    GLuint litShader = glCreateShader(GL_VERTEX_SHADER);
-    pglProgram::CompileShader(litShader,
+    GLuint litShader = pglProgram::CompileShader(GL_VERTEX_SHADER,
         "precision highp float;\n"
 
         "attribute vec3 position;\n"
@@ -177,8 +284,7 @@ pglContext::pglContext(pglDevice* dev, pglDisplay* disp) : pddiBaseContext((pddi
         "}\n"
     );
 
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    pglProgram::CompileShader(fragmentShader,
+    GLuint fragmentShader = pglProgram::CompileShader( GL_FRAGMENT_SHADER,
         "precision mediump float;\n"
         "varying vec2 tc;\n"
         "varying vec4 cpri;\n"
@@ -189,8 +295,7 @@ pglContext::pglContext(pglDevice* dev, pglDisplay* disp) : pddiBaseContext((pddi
         "}\n"
     );
 
-    GLuint textureShader = glCreateShader(GL_FRAGMENT_SHADER);
-    pglProgram::CompileShader(textureShader,
+    GLuint textureShader = pglProgram::CompileShader(GL_FRAGMENT_SHADER,
         "precision mediump float;\n"
         "varying vec2 tc;\n"
         "varying vec4 cpri;\n"
@@ -203,8 +308,7 @@ pglContext::pglContext(pglDevice* dev, pglDisplay* disp) : pddiBaseContext((pddi
         "}\n"
     );
 
-    GLuint alphaTestShader = glCreateShader(GL_FRAGMENT_SHADER);
-    pglProgram::CompileShader(alphaTestShader,
+    GLuint alphaTestShader = pglProgram::CompileShader(GL_FRAGMENT_SHADER,
         "precision mediump float;\n"
         "varying vec2 tc;\n"
         "varying vec4 cpri;\n"
@@ -219,6 +323,7 @@ pglContext::pglContext(pglDevice* dev, pglDisplay* disp) : pddiBaseContext((pddi
         "    gl_FragColor = c;\n"
         "}\n"
     );
+#endif
 
     colorProgram[0] = pglProgram::CreateProgram(vertexShader, fragmentShader);
     colorProgram[1] = pglProgram::CreateProgram(litShader, fragmentShader);
@@ -230,12 +335,20 @@ pglContext::pglContext(pglDevice* dev, pglDisplay* disp) : pddiBaseContext((pddi
     alphaTestProgram[1] = pglProgram::CreateProgram(litShader, alphaTestShader);
 
     // Don't leak shaders
+#ifdef RAD_CG
+    cgDestroyProgram(vertexShader);
+    cgDestroyProgram(litShader);
+    cgDestroyProgram(fragmentShader);
+    cgDestroyProgram(textureShader);
+    cgDestroyProgram(alphaTestShader);
+#else
     glDeleteShader(vertexShader);
     glDeleteShader(litShader);
     glDeleteShader(fragmentShader);
     glDeleteShader(textureShader);
     glDeleteShader(alphaTestShader);
-    
+#endif
+
     defaultShader = new pglMat(this);
     defaultShader->AddRef();
     SetShaderProgram(colorProgram[0]);
@@ -1118,7 +1231,7 @@ void pglContext::SetShaderProgram(pglProgram* program)
         return;
 
     currentProgram->AddRef();
-    glUseProgram(currentProgram->GetProgram());
+    currentProgram->UseProgram();
     currentProgram->SetProjectionMatrix(&projection);
 
     LoadHardwareMatrix(PDDI_MATRIX_MODELVIEW);
