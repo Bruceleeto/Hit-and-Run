@@ -74,18 +74,6 @@ GLenum uvTable[3] =
     GL_CLAMP_TO_EDGE
 };
 
-GLenum alphaCompareTable[8] =
-{
-    GL_NEVER,
-    GL_ALWAYS,
-    GL_LESS,
-    GL_LEQUAL,
-    GL_GREATER,
-    GL_GEQUAL,
-    GL_EQUAL,
-    GL_NOTEQUAL
-};
-
 GLenum alphaBlendTable[8][3] =
 {
     { GL_FUNC_ADD, GL_ONE, GL_ZERO },                       //PDDI_BLEND_NONE,
