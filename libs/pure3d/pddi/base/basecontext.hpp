@@ -18,7 +18,7 @@
 #define PDDI_MAX_UV_CHANNELS 4
 #define PDDI_MAX_CLIP_PLANES 6
 
-#if defined(RAD_PS2) || defined(RAD_GAMECUBE) || defined(RAD_GLES)
+#if defined(RAD_PS2) || defined(RAD_GAMECUBE) || defined(RAD_GLES) || defined(RAD_GXM)
     #define PDDI_MAX_LIGHTS 4
 #else
     #define PDDI_MAX_LIGHTS 8

@@ -58,6 +58,7 @@ const int PDDI_LIBID_GAMECUBE   = 9;
 const int PDDI_LIBID_XBOX       = 10;
 const int PDDI_LIBID_NEOGEO     = 11;
 const int PDDI_LIBID_VECTREX    = 12;
+const int PDDI_LIBID_VITA       = 13;
 
 // values returned by pddiObject::GetLastError()
 // generic errors

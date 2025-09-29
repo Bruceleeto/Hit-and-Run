@@ -100,7 +100,18 @@ else()
 endif()
 
 set(SRR2_P3D_PDDI "OpenGL" CACHE STRING "Pure3D PDDI implementation")
-set_property(CACHE SRR2_P3D_PDDI PROPERTY STRINGS "OpenGL" "GLES1" "GLES2")
+if(VITA)
+	set_property(CACHE SRR2_P3D_PDDI PROPERTY STRINGS "OpenGL" "GLES1" "GLES2" "GXM")
+	option(SRR2_USE_VITAGL ON)
+	if(SRR2_USE_VITAGL)
+		add_compile_definitions(RAD_VITAGL)
+	endif()
+	if(SRR2_P3D_PDDI STREQUAL "GXM")
+		add_compile_definitions(RAD_GXM)
+	endif()
+else()
+	set_property(CACHE SRR2_P3D_PDDI PROPERTY STRINGS "OpenGL" "GLES1" "GLES2")
+endif()
 if(SRR2_P3D_PDDI STREQUAL "GLES1")
 	add_compile_definitions(RAD_GLES)
 	add_compile_definitions(RAD_GLES_VERSION=1)
@@ -108,12 +119,6 @@ endif()
 if(SRR2_P3D_PDDI STREQUAL "GLES2")
 	add_compile_definitions(RAD_GLES)
 	add_compile_definitions(RAD_GLES_VERSION=2)
-endif()
-if(VITA)
-	option(SRR2_USE_VITAGL ON)
-	if(SRR2_USE_VITAGL)
-		add_compile_definitions(RAD_VITAGL)
-	endif()
 endif()
 
 if(WIN32)
@@ -1147,7 +1152,20 @@ set(PDDI_SOURCES
 	"libs/pure3d/pddi/base/font.cpp"
 	"libs/pure3d/pddi/base/pddiobj.cpp"
 )
-if(SRR2_P3D_PDDI STREQUAL "GLES2")
+if(SRR2_P3D_PDDI STREQUAL "GXM")
+	list(APPEND PDDI_SOURCES
+		"libs/pure3d/pddi/gxm/context.cpp"
+		"libs/pure3d/pddi/gxm/device.cpp"
+		"libs/pure3d/pddi/gxm/material.cpp"
+		"libs/pure3d/pddi/gxm/texture.cpp"
+		"libs/pure3d/pddi/gxm/program.cpp"
+		"libs/pure3d/pddi/gxm/display.cpp"
+		"libs/pure3d/pddi/gxm/shaders/vertex_gxp.obj"
+		"libs/pure3d/pddi/gxm/shaders/color_gxp.obj"
+		"libs/pure3d/pddi/gxm/shaders/texture_gxp.obj"
+		"libs/pure3d/pddi/gxm/shaders/alpha_gxp.obj"
+	)
+elseif(SRR2_P3D_PDDI STREQUAL "GLES2")
 	list(APPEND PDDI_SOURCES
 		"libs/pure3d/pddi/gles/glcon.cpp"
 		"libs/pure3d/pddi/gles/gldev.cpp"
