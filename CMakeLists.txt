@@ -1160,10 +1160,6 @@ if(SRR2_P3D_PDDI STREQUAL "GXM")
 		"libs/pure3d/pddi/gxm/texture.cpp"
 		"libs/pure3d/pddi/gxm/program.cpp"
 		"libs/pure3d/pddi/gxm/display.cpp"
-		"libs/pure3d/pddi/gxm/shaders/vertex_gxp.obj"
-		"libs/pure3d/pddi/gxm/shaders/color_gxp.obj"
-		"libs/pure3d/pddi/gxm/shaders/texture_gxp.obj"
-		"libs/pure3d/pddi/gxm/shaders/alpha_gxp.obj"
 	)
 elseif(SRR2_P3D_PDDI STREQUAL "GLES2")
 	list(APPEND PDDI_SOURCES
@@ -1225,7 +1221,9 @@ option(SRR2_P3D_CG ON)
 set(SRR2_P3D_CG_PATH "C:/Program Files (x86)/NVIDIA Corporation/Cg")
 add_library(pddi STATIC ${PDDI_SOURCES})
 target_include_directories(pddi PUBLIC "libs/pure3d/")
-if(SRR2_P3D_PDDI STREQUAL GLES2)
+if(SRR2_P3D_PDDI STREQUAL GXM)
+	target_link_libraries(pddi radcontent)
+elseif(SRR2_P3D_PDDI STREQUAL GLES2)
 	target_include_directories(pddi PRIVATE "libs/pure3d/pddi/gles/glad/include/")
 else()
 	target_include_directories(pddi PRIVATE "libs/pure3d/pddi/gl/glad/include/")
@@ -1496,7 +1494,7 @@ target_include_directories(SRR2 PRIVATE "code/")
 
 if(VITA)
 	## Create Vita files
-	if(NOT SRR2_USE_VITAGL)
+	if(SRR2_P3D_PDDI STREQUAL "GLES2" AND NOT SRR2_USE_VITAGL)
 		vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME} UNSAFE)
 		# The FILE directive lets you add additional files to the VPK, the syntax is
 		# FILE src_path dst_path_in_vpk. In this case, we add the LiveArea paths.
@@ -1527,6 +1525,12 @@ if(VITA)
 			sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
 			sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
 			art art
+
+			#gxp
+			libs/pure3d/pddi/gxm/shaders/vertex_cg.gxp shaders/vertex_cg.gxp
+			libs/pure3d/pddi/gxm/shaders/color_cg.gxp shaders/color_cg.gxp
+			libs/pure3d/pddi/gxm/shaders/texture_cg.gxp shaders/texture_cg.gxp
+			libs/pure3d/pddi/gxm/shaders/alpha_cg.gxp shaders/alpha_cg.gxp
 		)
 	endif()
 endif()

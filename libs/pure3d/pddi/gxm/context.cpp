@@ -11,6 +11,7 @@
 #include <pddi/gxm/program.hpp>
 
 #include <pddi/base/debug.hpp>
+#include <p3d/utility.hpp>
 #include <math.h>
 #include <string.h>
 #include <SDL.h>
@@ -26,23 +27,49 @@ SceGxmPrimitiveType primTypeTable[5] =
     SCE_GXM_PRIMITIVE_POINTS,         // PDDI_PRIM_POINTS
 };
 
-// shaders
-extern SceGxmProgram _binary_vertex_gxp_start;
-extern const size_t _binary_vertex_gxp_size;
-extern const uintptr_t _binary_vertex_cg_gxp_end;
-const SceGxmProgram* _binary_vertex_gxp = (SceGxmProgram*)(_binary_vertex_cg_gxp_end - _binary_vertex_gxp_size);
-extern SceGxmProgram _binary_color_gxp_start;
-extern const size_t _binary_color_gxp_size;
-extern const uintptr_t _binary_color_cg_gxp_end;
-const SceGxmProgram* _binary_color_gxp = (SceGxmProgram*)(_binary_color_cg_gxp_end - _binary_color_gxp_size);
-extern SceGxmProgram _binary_texture_gxp_start;
-extern const size_t _binary_texture_gxp_size;
-extern const uintptr_t _binary_texture_cg_gxp_end;
-const SceGxmProgram* _binary_texture_gxp = (SceGxmProgram*)(_binary_texture_cg_gxp_end - _binary_texture_gxp_size);
-extern SceGxmProgram _binary_alpha_gxp_start;
-extern const size_t _binary_alpha_gxp_size;
-extern const uintptr_t _binary_alpha_cg_gxp_end;
-const SceGxmProgram* _binary_alpha_gxp = (SceGxmProgram*)(_binary_alpha_cg_gxp_end - _binary_alpha_gxp_size);
+
+const char* pddiGxmErrorString(unsigned int err)
+{
+    switch(err)
+    {
+#define GXM_ERROR(x) case x: return #x
+        GXM_ERROR(SCE_GXM_ERROR_UNINITIALIZED);
+        GXM_ERROR(SCE_GXM_ERROR_ALREADY_INITIALIZED);
+        GXM_ERROR(SCE_GXM_ERROR_OUT_OF_MEMORY);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_VALUE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_ALIGNMENT);
+        GXM_ERROR(SCE_GXM_ERROR_NOT_WITHIN_SCENE);
+        GXM_ERROR(SCE_GXM_ERROR_WITHIN_SCENE);
+        GXM_ERROR(SCE_GXM_ERROR_NULL_PROGRAM);
+        GXM_ERROR(SCE_GXM_ERROR_UNSUPPORTED);
+        GXM_ERROR(SCE_GXM_ERROR_PATCHER_INTERNAL);
+        GXM_ERROR(SCE_GXM_ERROR_RESERVE_FAILED);
+        GXM_ERROR(SCE_GXM_ERROR_PROGRAM_IN_USE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_INDEX_COUNT);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_POLYGON_MODE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_SAMPLER_RESULT_TYPE_PRECISION);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_SAMPLER_RESULT_TYPE_COMPONENT_COUNT);
+        GXM_ERROR(SCE_GXM_ERROR_UNIFORM_BUFFER_NOT_RESERVED);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_AUXILIARY_SURFACE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_PRECOMPUTED_DRAW);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_PRECOMPUTED_VERTEX_STATE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_PRECOMPUTED_FRAGMENT_STATE);
+        GXM_ERROR(SCE_GXM_ERROR_DRIVER);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_TEXTURE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_TEXTURE_DATA_POINTER);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_TEXTURE_PALETTE_POINTER);
+#undef  GXM_ERROR
+    }
+    return "Unknown error";
+}
+
+bool pddiGxmAssert(const char* file, int line, unsigned int err, const char* cond)
+{
+    if(err != SCE_OK && pddiAssertFailed(file, line, cond, pddiGxmErrorString(err), "GXM"))
+        pddiBreak();
+    return err == SCE_OK;
+}
 
 class gxmExtGamma : public pddiExtGammaControl
 {
@@ -129,13 +156,13 @@ gxmContext::gxmContext(gxmDevice* dev, gxmDisplay* disp) : pddiBaseContext((pddi
     CHK_GXM(sceGxmShaderPatcherCreate(&patcherParams, &shaderPatcher));
 
     // use embedded GXP files
-    vertexProgram = new gxmProgram(&_binary_vertex_gxp_start);
+    vertexProgram = new gxmProgram(p3d::openFile("shaders/vertex_cg.gxp", false));
     vertexProgram->AddRef();
-    colorProgram = new gxmProgram(&_binary_color_gxp_start);
+    colorProgram = new gxmProgram(p3d::openFile("shaders/color_cg.gxp", false));
     colorProgram->AddRef();
-    textureProgram = new gxmProgram(&_binary_texture_gxp_start);
+    textureProgram = new gxmProgram(p3d::openFile("shaders/texture_cg.gxp", false));
     textureProgram->AddRef();
-    alphaTestProgram = new gxmProgram(&_binary_alpha_gxp_start);
+    alphaTestProgram = new gxmProgram(p3d::openFile("shaders/alpha_cg.gxp", false));
     alphaTestProgram->AddRef();
 
     CHK_GXM(sceGxmShaderPatcherRegisterProgram(shaderPatcher, vertexProgram->GetProgram(), &vertexProgramId));
@@ -175,8 +202,6 @@ gxmContext::gxmContext(gxmDevice* dev, gxmDisplay* disp) : pddiBaseContext((pddi
         SCE_GXM_MEMORY_ATTRIB_READ,
         &defaultColourUid);
     CHK_GXM(sceGxmSetVertexStream(context, 1, defaultColour));
-    CHK_GXM(sceGxmReserveVertexDefaultUniformBuffer(context, &vertexUniformBuffer));
-    CHK_GXM(sceGxmReserveFragmentDefaultUniformBuffer(context, &fragmentUniformBuffer));
 
     defaultShader = new gxmMat(this);
     defaultShader->AddRef();
@@ -204,7 +229,24 @@ void gxmContext::BeginFrame()
 {
     pddiBaseContext::BeginFrame();
 
-    SDL_GL_SetSwapInterval(display->GetForceVSync() ? 1 : 0);
+    sceGxmFinish(context);
+    for(pddiPrimBuffer* buffer : streams)
+        buffer->Release();
+    streams.clear();
+
+    CHK_GXM(sceGxmBeginScene(
+        context,
+        0,
+        display->GetRenderTarget(),
+        NULL,
+        NULL,
+        display->GetFragementSyncObj(),
+        display->GetColorSurface(),
+        display->GetDepthSurface()
+    ));
+
+    CHK_GXM(sceGxmReserveVertexDefaultUniformBuffer(context, &vertexUniformBuffer));
+    CHK_GXM(sceGxmReserveFragmentDefaultUniformBuffer(context, &fragmentUniformBuffer));
 
     if(display->HasReset())
     {
@@ -220,9 +262,8 @@ void gxmContext::EndFrame()
 {
     pddiBaseContext::EndFrame();
 
-    for (pddiPrimBuffer* buffer : streams)
-        buffer->Release();
-    streams.clear();
+    CHK_GXM(sceGxmEndScene(context, NULL, NULL));
+    CHK_GXM(sceGxmPadHeartbeat(display->GetColorSurface(), display->GetFragementSyncObj()));
 }
 
 // buffer clearing

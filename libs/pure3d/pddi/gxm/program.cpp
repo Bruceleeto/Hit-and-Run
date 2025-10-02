@@ -5,6 +5,7 @@
 #include <pddi/gxm/gxm.hpp>
 #include <pddi/gxm/program.hpp>
 #include <pddi/gxm/material.hpp>
+#include <p3d/file.hpp>
 
 #include <string>
 #include <vector>
@@ -16,9 +17,14 @@ static inline void UniformColour(void* buffer, const SceGxmProgramParameter* par
     sceGxmSetUniformDataF(buffer, param, 0, 4, colour);
 }
 
-gxmProgram::gxmProgram(const SceGxmProgram* prog)
-    : program(prog)
+gxmProgram::gxmProgram(tFile* gxp)
+    : program()
 {
+    gxp->AddRef();
+    program = (SceGxmProgram*)malloc(gxp->GetSize());
+    gxp->GetData(program, gxp->GetSize());
+    gxp->Release();
+
     projection = sceGxmProgramFindParameterByName(program, "projection");
     modelview = sceGxmProgramFindParameterByName(program, "modelview");
     normalmatrix = sceGxmProgramFindParameterByName(program, "normalmatrix");
@@ -44,6 +50,7 @@ gxmProgram::gxmProgram(const SceGxmProgram* prog)
 
 gxmProgram::~gxmProgram()
 {
+    free(program);
 }
 
 void gxmProgram::SetProjectionMatrix(void* buffer, const pddiMatrix* matrix)

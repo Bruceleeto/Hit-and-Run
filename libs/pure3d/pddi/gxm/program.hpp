@@ -10,11 +10,12 @@
 #include <pddi/base/basecontext.hpp>
 #include <pddi/gxm/gxm.hpp>
 struct gxmTextureEnv;
+class tFile;
 
 class gxmProgram : public pddiObject
 {
 public:
-    gxmProgram(const SceGxmProgram* prog);
+    gxmProgram(tFile* gxp);
     ~gxmProgram();
 
     const SceGxmProgram* GetProgram() { return program; }
@@ -29,7 +30,7 @@ public:
     inline bool SupportsTextures() { return sampler != nullptr; }
 
 protected:
-    const SceGxmProgram* program;
+    SceGxmProgram* program;
 
     // Uniform locations
     const SceGxmProgramParameter* projection;

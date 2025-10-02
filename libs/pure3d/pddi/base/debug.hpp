@@ -34,17 +34,14 @@
 #include <assert.h>
     #define PDDIASSERT(c) assert(c)
     #define PDDIASSERTMSG(c, msg, mod) assert(c && msg)
-    #define PDDIASSERTNOBRK(c) !!(c)
 #else
     bool pddiAssertFailed(const char *file, int line, const char *cond, const char *msg=0, const char *module=0);
     #define PDDIASSERT(c) if(!(c)) { if(pddiAssertFailed(__FILE__, __LINE__, #c)) { pddiBreak(); }}
     #define PDDIASSERTMSG(c, msg, mod) if(!(c)) { if(pddiAssertFailed(__FILE__, __LINE__, #c,  (msg), (mod))) { pddiBreak();}}
-    #define PDDIASSERTNOBRK(c) (!!(c) || pddiAssertFailed(__FILE__, __LINE__, #c))
 #endif
 #else
     #define PDDIASSERT(c)
     #define PDDIASSERTMSG(c, msg, mod)
-    #define PDDIASSERTNOBRK(c)
 #endif //P3DDEBUG
 
 #endif

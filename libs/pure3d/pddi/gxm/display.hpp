@@ -31,7 +31,6 @@ public:
     pddiDisplayMode GetDisplayMode(void);
     int GetNumColourBuffer(void);
     unsigned GetBufferMask(void);
-    SceGxmMultisampleMode GetMSAAMode(void);
 
     unsigned GetFreeTextureMem(void);
 
@@ -42,6 +41,15 @@ public:
     // Win32 specific functions
     long  ProcessWindowMessage(SDL_Window* wnd, const SDL_WindowEvent* event);
     void  SetWindow(SDL_Window* wnd);
+
+    // GXM specific functions
+
+    SceGxmMultisampleMode GetMSAAMode(void);
+    SceGxmContext* GetGXMContext(void) { return gxm; }
+    const SceGxmRenderTarget* GetRenderTarget(void) { return renderTarget; }
+    const SceGxmDepthStencilSurface* GetDepthSurface(void) { return &depthSurface; }
+    const SceGxmColorSurface* GetColorSurface(void) { return &displaySurface[backBufferIndex]; }
+    SceGxmSyncObject* GetFragementSyncObj(void) { return displayBufferSync[backBufferIndex]; }
 
     // internal functions
     
@@ -54,8 +62,6 @@ public:
     bool HasReset(void) { return reset; }
 
     static unsigned FillDisplayModes(int, pddiModeInfo*);
-
-    struct SceGxmContext* GetGXMContext(void) { return gxm; }
 
     void SetGamma(float r, float g, float b);
     void GetGamma(float* r, float* g, float* b);
