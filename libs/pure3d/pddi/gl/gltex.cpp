@@ -323,10 +323,12 @@ pglTexture::~pglTexture()
 {
     if(gltexture) glDeleteTextures(1, &gltexture);
 
-    for(int i = 0; i < nMipMap+1; i++)
-        radMemoryFreeAligned(bits[i]);
-
-    if(bits) delete [] bits;
+    if(bits)
+    {
+        for(int i = 0; i < nMipMap + 1; i++)
+            radMemoryFreeAligned(bits[i]);
+        delete [] bits;
+    }
 
     context->ADD_STAT(PDDI_STAT_TEXTURE_ALLOC_32BIT, -(float)((xSize * ySize * lock.depth) / 8192));
     context->ADD_STAT(PDDI_STAT_TEXTURE_COUNT_32BIT, -1);
