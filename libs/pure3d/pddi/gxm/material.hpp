@@ -91,6 +91,9 @@ public:
 private:
     gxmContext* context;
     int pass;
+    bool valid;
+    gxmProgram* program;
+    SceGxmFragmentProgram* shader;
     gxmTextureEnv texEnv[gxmMaxPasses];
 };
 

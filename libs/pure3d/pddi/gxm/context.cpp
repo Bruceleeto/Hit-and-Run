@@ -165,10 +165,6 @@ gxmContext::gxmContext(gxmDevice* dev, gxmDisplay* disp) : pddiBaseContext((pddi
     alphaTestProgram = new gxmProgram(shaderPatcher, p3d::openFile("app0:/shaders/alpha_cg.gxp", false));
     alphaTestProgram->AddRef();
 
-    colorFragment = colorProgram->PatchFragmentShader(display->GetMSAAMode());
-    textureFragment = textureProgram->PatchFragmentShader(display->GetMSAAMode());
-    alphaFragment = alphaTestProgram->PatchFragmentShader(display->GetMSAAMode());
-
     dummyVector = (pddiVector4*)device->graphicsAlloc(
         SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
         sizeof(pddiVector4),
@@ -180,20 +176,19 @@ gxmContext::gxmContext(gxmDevice* dev, gxmDisplay* disp) : pddiBaseContext((pddi
 
     defaultShader = new gxmMat(this);
     defaultShader->AddRef();
-    SetFragmentProgram(colorProgram, colorFragment);
 }
 
 gxmContext::~gxmContext()
 {
     defaultShader->Release();
     vertexProgram->Release();
-    fragmentProgram->Release();
     colorProgram->Release();
     textureProgram->Release();
     alphaTestProgram->Release();
 
     delete extGamma;
 
+    CHK_GXM(sceGxmShaderPatcherDestroy(shaderPatcher));
     gxmDevice::graphicsFree(dummyVectorUid);
     gxmDevice::graphicsFree(patcherBufferUid);
 
@@ -211,6 +206,9 @@ void gxmContext::BeginFrame()
     for(pddiPrimBuffer* buffer : streams)
         buffer->Release();
     streams.clear();
+    for(SceGxmFragmentProgram* shader : shaders)
+        CHK_GXM(sceGxmShaderPatcherReleaseFragmentProgram(shaderPatcher, shader));
+    shaders.clear();
 
     CHK_GXM(sceGxmBeginScene(
         context,
@@ -982,28 +980,30 @@ void gxmContext::SetVertexShader(unsigned int vertexType, uint16_t stride)
     }
 }
 
-void gxmContext::SetFragmentProgram(gxmProgram* program, SceGxmFragmentProgram* frag)
+void gxmContext::SetFragmentShader(SceGxmFragmentProgram* frag)
 {
-    if(program == fragmentProgram)
+    if(frag == fragmentShader)
         return;
 
-    if(fragmentProgram)
-        fragmentProgram->Release();
-    fragmentProgram = program;
+    fragmentShader = frag;
     sceGxmSetFragmentProgram(context, frag);
-    if(!fragmentProgram)
+    if(!frag)
         return;
 
-    fragmentProgram->AddRef();
+    shaders.push_back(fragmentShader);
+    CHK_GXM(sceGxmShaderPatcherAddRefFragmentProgram(shaderPatcher, fragmentShader));
 }
 
-void gxmContext::SetTextureEnvironment(const gxmTextureEnv* texEnv)
+gxmProgram* gxmContext::GetFragmentProgram(const gxmTextureEnv* texEnv)
 {
     if(texEnv->texture)
-        SetFragmentProgram(texEnv->alphaTest ? alphaTestProgram : textureProgram, texEnv->alphaTest ? alphaFragment : textureFragment );
+        return texEnv->alphaTest ? alphaTestProgram : textureProgram;
     else
-        SetFragmentProgram(colorProgram, colorFragment);
+        return colorProgram;
+}
 
+void gxmContext::SetTextureEnvironment(const gxmTextureEnv* texEnv, gxmProgram* fragProgram)
+{
     CHK_GXM(sceGxmReserveFragmentDefaultUniformBuffer(context, &fragmentUniformBuffer));
     CHK_GXM(sceGxmReserveVertexDefaultUniformBuffer(context, &vertexUniformBuffer));
     for(int i = 0; i < PDDI_MAX_LIGHTS; i++)
@@ -1012,5 +1012,5 @@ void gxmContext::SetTextureEnvironment(const gxmTextureEnv* texEnv)
     vertexProgram->SetModelViewMatrix(vertexUniformBuffer, state.matrixStack[PDDI_MATRIX_MODELVIEW]->Top());
     vertexProgram->SetProjectionMatrix(vertexUniformBuffer, &projection);
     vertexProgram->SetTextureEnvironment(vertexUniformBuffer, texEnv);
-    fragmentProgram->SetAlphaTest(fragmentUniformBuffer, texEnv);
+    fragProgram->SetAlphaTest(fragmentUniformBuffer, texEnv);
 }

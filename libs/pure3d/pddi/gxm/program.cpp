@@ -249,7 +249,7 @@ SceGxmVertexProgram* gxmProgram::PatchVertexShader(unsigned int vertexType, uint
     return vert;
 }
 
-SceGxmFragmentProgram* gxmProgram::PatchFragmentShader(SceGxmMultisampleMode msaaMode)
+SceGxmFragmentProgram* gxmProgram::PatchFragmentShader(const SceGxmBlendInfo* blendInfo, SceGxmMultisampleMode msaaMode)
 {
     SceGxmFragmentProgram* frag = nullptr;
     CHK_GXM(sceGxmShaderPatcherCreateFragmentProgram(
@@ -257,8 +257,18 @@ SceGxmFragmentProgram* gxmProgram::PatchFragmentShader(SceGxmMultisampleMode msa
         patcherId,
         SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
         msaaMode,
-        NULL,
+        blendInfo,
         NULL,
         &frag));
     return frag;
+}
+
+void gxmProgram::ReleaseVertexShader(SceGxmVertexProgram* shader)
+{
+    CHK_GXM(sceGxmShaderPatcherReleaseVertexProgram(shaderPatcher, shader));
+}
+
+void gxmProgram::ReleaseFragmentShader(SceGxmFragmentProgram* shader)
+{
+    CHK_GXM(sceGxmShaderPatcherReleaseFragmentProgram(shaderPatcher, shader));
 }

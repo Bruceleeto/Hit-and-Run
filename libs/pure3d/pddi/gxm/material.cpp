@@ -102,6 +102,9 @@ SceGxmBlendFactor alphaBlendTable[8][2] =
 gxmMat::gxmMat(gxmContext* c) 
 {
     context = c;
+    valid = false;
+    program = nullptr;
+    shader = nullptr;
 
     for(int i = 0; i < gxmMaxPasses; i++)
     {
@@ -138,6 +141,13 @@ gxmMat::~gxmMat()
     for(int i = 0; i < gxmMaxPasses; i++)
         if(texEnv[i].texture)
             texEnv[i].texture->Release();
+
+    if(program)
+    {
+        if(shader)
+            program->ReleaseFragmentShader(shader);
+        program->Release();
+    }
 }
 
 
@@ -169,52 +179,63 @@ void gxmMat::SetTexture(pddiTexture* t)
 
     if(texEnv[pass].texture)
         texEnv[pass].texture->AddRef();
+
+    valid = false;
 }
 
 void gxmMat::SetUVMode(int mode) 
 {
     texEnv[pass].uvMode = (pddiUVMode)mode;
+    valid = false;
 }
 
 void gxmMat::SetFilterMode(int mode) 
 {
     texEnv[pass].filterMode = (pddiFilterMode)mode;
+    valid = false;
 }
 
 void gxmMat::SetShadeMode(int shade) 
 {
     texEnv[pass].shadeMode = (pddiShadeMode)shade;
+    valid = false;
 }
 
 void gxmMat::SetTwoSided(int b)
 {
     texEnv[pass].twoSided = b != 0;
+    valid = false;
 }
 
 void gxmMat::EnableLighting(int b)
 {
     texEnv[pass].lit = b != 0;
+    valid = false;
 }
 
 void gxmMat::SetAmbient(pddiColour a) 
 {
     texEnv[pass].ambient = a;
+    valid = false;
 }
 
 void gxmMat::SetDiffuse(pddiColour colour) 
 {
     texEnv[pass].diffuse = colour;
+    valid = false;
 }
 
 void gxmMat::SetSpecular(pddiColour c) 
 {
     texEnv[pass].specular = c;
+    valid = false;
 }
 
 void gxmMat::SetEmissive(pddiColour c) 
 {
     texEnv[pass].emissive = c;
     SetEmissiveAlpha(c.Alpha());
+    valid = false;
 }
 
 void gxmMat::SetEmissiveAlpha(int alpha)
@@ -232,31 +253,37 @@ void gxmMat::SetEmissiveAlpha(int alpha)
         texEnv[pass].ambient.SetAlpha(255);
         texEnv[pass].emissive.SetAlpha(255);
     }
+    valid = false;
 }
 
 void gxmMat::SetShininess(float power) 
 {
     texEnv[pass].shininess = power;
+    valid = false;
 }
 
 void gxmMat::SetBlendMode(int mode) 
 {
     texEnv[pass].alphaBlendMode = (pddiBlendMode)mode;
+    valid = false;
 }
 
 void gxmMat::EnableAlphaTest(int b) 
 {
     texEnv[pass].alphaTest = b != 0;
+    valid = false;
 }
 
 void gxmMat::SetAlphaCompare(int compare) 
 {
     texEnv[pass].alphaCompareMode = pddiCompareMode(compare);
+    valid = false;
 }
 
 void gxmMat::SetAlphaRef(float ref) 
 {
     texEnv[pass].alphaRef = ref;
+    valid = false;
 }
 
 int gxmMat::CountDevPasses(void) 
@@ -269,7 +296,30 @@ void gxmMat::SetDevPass(unsigned pass)
     int i = 0;
     SceGxmContext* gxm = context->GetDisplay()->GetGXMContext();
 
-    context->SetTextureEnvironment(&texEnv[i]);
+    if(!valid)
+    {
+        // TODO
+        if(texEnv[i].alphaBlendMode == PDDI_BLEND_NONE)
+        {
+        }
+        else
+        {
+        }
+
+        if(program)
+        {
+            if(shader)
+                program->ReleaseFragmentShader(shader);
+            program->Release();
+        }
+        program = context->GetFragmentProgram(&texEnv[i]);
+        program->AddRef();
+        shader = program->PatchFragmentShader(nullptr, context->GetDisplay()->GetMSAAMode());
+        valid = true;
+    }
+
+    context->SetFragmentShader(shader);
+    context->SetTextureEnvironment(&texEnv[i], program);
 
     if(texEnv[i].texture)
     {
@@ -280,14 +330,6 @@ void gxmMat::SetDevPass(unsigned pass)
         CHK_GXM(sceGxmTextureSetUAddrMode(texture, uvTable[texEnv[i].uvMode]));
         CHK_GXM(sceGxmTextureSetVAddrMode(texture, uvTable[texEnv[i].uvMode]));
         CHK_GXM(sceGxmSetFragmentTexture(gxm, 0, texture));
-    }
-
-    // TODO
-    if(texEnv[i].alphaBlendMode == PDDI_BLEND_NONE)
-    {
-    }
-    else
-    {
     }
 
     context->EnableCulling(!texEnv[i].twoSided);

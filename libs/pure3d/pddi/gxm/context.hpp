@@ -87,8 +87,9 @@ public :
 
     // internal pddiglfunctions
     gxmDisplay* GetDisplay(void) {return display;}
-    void SetFragmentProgram(gxmProgram* program, SceGxmFragmentProgram* frag);
-    void SetTextureEnvironment(const gxmTextureEnv* texEnv);
+    void SetFragmentShader(SceGxmFragmentProgram* frag);
+    gxmProgram* GetFragmentProgram(const gxmTextureEnv* texEnv);
+    void SetTextureEnvironment(const gxmTextureEnv* texEnv, gxmProgram* fragProgram);
 
     unsigned contextID;
 
@@ -116,7 +117,6 @@ protected:
     pddiVector4* dummyVector;
 
     gxmProgram* vertexProgram;
-    gxmProgram* fragmentProgram;
     gxmProgram* colorProgram;
     gxmProgram* textureProgram;
     gxmProgram* alphaTestProgram;
@@ -126,15 +126,6 @@ protected:
     SceGxmFragmentProgram* fragmentShader;
     void* vertexUniformBuffer;
     void* fragmentUniformBuffer;
-
-    SceGxmShaderPatcherId vertexProgramId;
-    SceGxmShaderPatcherId colorProgramId;
-    SceGxmShaderPatcherId textureProgramId;
-    SceGxmShaderPatcherId alphaProgramId;
-
-    SceGxmFragmentProgram* colorFragment;
-    SceGxmFragmentProgram* textureFragment;
-    SceGxmFragmentProgram* alphaFragment;
 
     SceUID defaultIndicesUid;
     SceUID dummyVectorUid;
@@ -160,6 +151,7 @@ protected:
 
     pddiMatrix projection;
     std::vector<class pddiPrimBuffer*> streams;
+    std::vector<class SceGxmFragmentProgram*> shaders;
 };
 
 class gxmPrimBufferStream;

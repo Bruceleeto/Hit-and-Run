@@ -31,7 +31,9 @@ public:
     inline bool SupportsTextures() { return sampler != nullptr; }
 
     SceGxmVertexProgram* PatchVertexShader(unsigned int vertexType, uint16_t stride);
-    SceGxmFragmentProgram* PatchFragmentShader(SceGxmMultisampleMode msaaMode);
+    SceGxmFragmentProgram* PatchFragmentShader(const SceGxmBlendInfo* blendInfo, SceGxmMultisampleMode msaaMode);
+    void ReleaseVertexShader(SceGxmVertexProgram* shader);
+    void ReleaseFragmentShader(SceGxmFragmentProgram* shader);
 
 protected:
     SceGxmProgram* program;
