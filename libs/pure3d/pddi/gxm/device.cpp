@@ -25,6 +25,54 @@ static gxmDevice gblDevice;
 
 char libName [] = "GXM";
 
+#ifdef PDDI_USE_ASSERTS
+
+const char* pddiGxmErrorString(unsigned int err)
+{
+    switch(err)
+    {
+#define GXM_ERROR(x) case x: return #x
+        GXM_ERROR(SCE_GXM_ERROR_UNINITIALIZED);
+        GXM_ERROR(SCE_GXM_ERROR_ALREADY_INITIALIZED);
+        GXM_ERROR(SCE_GXM_ERROR_OUT_OF_MEMORY);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_VALUE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_ALIGNMENT);
+        GXM_ERROR(SCE_GXM_ERROR_NOT_WITHIN_SCENE);
+        GXM_ERROR(SCE_GXM_ERROR_WITHIN_SCENE);
+        GXM_ERROR(SCE_GXM_ERROR_NULL_PROGRAM);
+        GXM_ERROR(SCE_GXM_ERROR_UNSUPPORTED);
+        GXM_ERROR(SCE_GXM_ERROR_PATCHER_INTERNAL);
+        GXM_ERROR(SCE_GXM_ERROR_RESERVE_FAILED);
+        GXM_ERROR(SCE_GXM_ERROR_PROGRAM_IN_USE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_INDEX_COUNT);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_POLYGON_MODE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_SAMPLER_RESULT_TYPE_PRECISION);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_SAMPLER_RESULT_TYPE_COMPONENT_COUNT);
+        GXM_ERROR(SCE_GXM_ERROR_UNIFORM_BUFFER_NOT_RESERVED);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_AUXILIARY_SURFACE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_PRECOMPUTED_DRAW);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_PRECOMPUTED_VERTEX_STATE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_PRECOMPUTED_FRAGMENT_STATE);
+        GXM_ERROR(SCE_GXM_ERROR_DRIVER);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_TEXTURE);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_TEXTURE_DATA_POINTER);
+        GXM_ERROR(SCE_GXM_ERROR_INVALID_TEXTURE_PALETTE_POINTER);
+#undef  GXM_ERROR
+    }
+    rDebugPrintf("Unknown error: (0x%08x)", err);
+    return "Unknown error";
+}
+
+bool pddiGxmAssert(const char* file, int line, unsigned int err, const char* cond)
+{
+    if(err != SCE_OK && pddiAssertFailed(file, line, cond, pddiGxmErrorString(err), "GXM"))
+        pddiBreak();
+    return err == SCE_OK;
+}
+
+#endif
+
 int pddiCreate(int versionMajor, int versionMinor, pddiDevice** device)
 {
     if((versionMajor != PDDI_VERSION_MAJOR) || (versionMinor != PDDI_VERSION_MINOR))
