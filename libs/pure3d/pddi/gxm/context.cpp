@@ -63,6 +63,7 @@ const char* pddiGxmErrorString(unsigned int err)
         GXM_ERROR(SCE_GXM_ERROR_INVALID_TEXTURE_PALETTE_POINTER);
 #undef  GXM_ERROR
     }
+    rDebugPrintf("Unknown error: (0x%08x)", err);
     return "Unknown error";
 }
 

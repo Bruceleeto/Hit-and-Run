@@ -229,7 +229,7 @@ bool gxmDisplay::InitDisplay(const pddiDisplayInit* init)
             radMemorySpace_Cdram,
             radMemoryGetCurrentAllocator(),
             4 * stride * winHeight,
-            SCE_GXM_COLOR_SURFACE_ALIGNMENT);
+            256);
 
         // memset the buffer to black
         for(uint32_t y = 0; y < winHeight; ++y) {
