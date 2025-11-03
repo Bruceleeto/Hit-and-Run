@@ -42,7 +42,6 @@ pglDisplay ::pglDisplay(pddiDisplayInfo* info)
 pglDisplay ::~pglDisplay()
 {
     /* release and free the device context and rendering context */
-    vglEnd();
     SDL_SetWindowGammaRamp(win, initialGammaRamp[0], initialGammaRamp[1], initialGammaRamp[2]);
 }
 
@@ -58,7 +57,6 @@ long pglDisplay ::ProcessWindowMessage(SDL_Window* win, const SDL_WindowEvent* e
 
         case SDL_WINDOWEVENT_CLOSE:
             /* release and free the device context and rendering context */
-            vglEnd();
             break;
 
 		default:

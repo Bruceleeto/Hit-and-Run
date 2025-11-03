@@ -329,8 +329,7 @@ bool Win32Platform::InitializeWindow()
     SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, 0 );
 
     int flags = 0;
-#ifndef RAD_VITAGL
-    // Use OpenGL instead of VitaGL
+#ifndef RAD_VITA
     flags |= SDL_WINDOW_OPENGL;
 #endif
 #ifdef __SWITCH__
