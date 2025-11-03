@@ -34,6 +34,10 @@ public:
 
     void Release(void);
 
+    static void* vertexUsseAlloc( uint32_t size, SceUID* uid, uint32_t* usseOffset );
+    static void  vertexUsseFree( SceUID uid );
+    static void* fragmentUsseAlloc( uint32_t size, SceUID* uid, uint32_t* usseOffset );
+    static void  fragmentUsseFree( SceUID uid );
 protected:
     bool initialized;
     pddiRenderContext* context;

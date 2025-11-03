@@ -187,3 +187,87 @@ void gxmDevice::AddCustomShader(const char* name, const char* aux)
 void gxmDevice::Release(void)
 {
 }
+
+void* gxmDevice::vertexUsseAlloc(uint32_t size, SceUID* uid, uint32_t* usseOffset)
+{
+    int err = SCE_OK;
+
+    // align to memblock alignment for LPDDR
+    size = ALIGN(size, 4096);
+
+    // allocate some memory
+    *uid = sceKernelAllocMemBlock("basic", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, size, NULL);
+    PDDIASSERT(*uid >= SCE_OK);
+
+    // grab the base address
+    void* mem = NULL;
+    err = sceKernelGetMemBlockBase(*uid, &mem);
+    PDDIASSERT(err == SCE_OK);
+
+    // map as vertex USSE code for the GPU
+    err = sceGxmMapVertexUsseMemory(mem, size, usseOffset);
+    PDDIASSERT(err == SCE_OK);
+
+    // done
+    return mem;
+}
+
+void gxmDevice::vertexUsseFree(SceUID uid)
+{
+    int err = SCE_OK;
+
+    // grab the base address
+    void* mem = NULL;
+    err = sceKernelGetMemBlockBase(uid, &mem);
+    PDDIASSERT(err == SCE_OK);
+
+    // unmap memory
+    err = sceGxmUnmapVertexUsseMemory(mem);
+    PDDIASSERT(err == SCE_OK);
+
+    // free the memory block
+    err = sceKernelFreeMemBlock(uid);
+    PDDIASSERT(err == SCE_OK);
+}
+
+void* gxmDevice::fragmentUsseAlloc(uint32_t size, SceUID* uid, uint32_t* usseOffset)
+{
+    int err = SCE_OK;
+
+    // align to memblock alignment for LPDDR
+    size = ALIGN(size, 4096);
+
+    // allocate some memory
+    *uid = sceKernelAllocMemBlock("basic", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, size, NULL);
+    PDDIASSERT(*uid >= SCE_OK);
+
+    // grab the base address
+    void* mem = NULL;
+    err = sceKernelGetMemBlockBase(*uid, &mem);
+    PDDIASSERT(err == SCE_OK);
+
+    // map as fragment USSE code for the GPU
+    err = sceGxmMapFragmentUsseMemory(mem, size, usseOffset);
+    PDDIASSERT(err == SCE_OK);
+
+    // done
+    return mem;
+}
+
+void gxmDevice::fragmentUsseFree(SceUID uid)
+{
+    int err = SCE_OK;
+
+    // grab the base address
+    void* mem = NULL;
+    err = sceKernelGetMemBlockBase(uid, &mem);
+    PDDIASSERT(err == SCE_OK);
+
+    // unmap memory
+    err = sceGxmUnmapFragmentUsseMemory(mem);
+    PDDIASSERT(err == SCE_OK);
+
+    // free the memory block
+    err = sceKernelFreeMemBlock(uid);
+    PDDIASSERT(err == SCE_OK);
+}

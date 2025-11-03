@@ -124,23 +124,16 @@ gxmContext::gxmContext(gxmDevice* dev, gxmDisplay* disp) : pddiBaseContext((pddi
         radMemoryGetCurrentAllocator(),
         patcherBufferSize);
 
-    radMemorySetAllocationName("patcherVertexUsse");
     uint32_t patcherVertexUsseOffset;
-    patcherVertexUsse = radMemorySpaceAllocAligned(
-        radMemorySpace_User,
-        radMemoryGetCurrentAllocator(),
+    void* patcherVertexUsse = device->vertexUsseAlloc(
         patcherVertexUsseSize,
-        4096);
-    CHK_GXM(sceGxmMapVertexUsseMemory(patcherBuffer, patcherVertexUsseSize, &patcherVertexUsseOffset));
-
-    radMemorySetAllocationName("patcherFragmentUsse");
+        &patcherVertexUsseUid,
+        &patcherVertexUsseOffset);
     uint32_t patcherFragmentUsseOffset;
-    patcherFragmentUsse = radMemorySpaceAllocAligned(
-        radMemorySpace_User,
-        radMemoryGetCurrentAllocator(),
+    void* patcherFragmentUsse = device->fragmentUsseAlloc(
         patcherFragmentUsseSize,
-        4096);
-    CHK_GXM(sceGxmMapFragmentUsseMemory(patcherFragmentUsse, patcherFragmentUsseSize, &patcherFragmentUsseOffset));
+        &patcherFragmentUsseUid,
+        &patcherFragmentUsseOffset);
 
     // create a shader patcher
     SceGxmShaderPatcherParams patcherParams;
@@ -196,12 +189,11 @@ gxmContext::~gxmContext()
 
     delete extGamma;
 
+    device->vertexUsseFree(patcherVertexUsseUid);
+    device->fragmentUsseFree(patcherFragmentUsseUid);
+
     CHK_GXM(sceGxmShaderPatcherDestroy(shaderPatcher));
     radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), patcherBuffer);
-    CHK_GXM(sceGxmUnmapVertexUsseMemory(patcherVertexUsse));
-    radMemorySpaceFreeAligned(radMemorySpace_User, radMemoryGetCurrentAllocator(), patcherVertexUsse);
-    CHK_GXM(sceGxmUnmapFragmentUsseMemory(patcherFragmentUsse));
-    radMemorySpaceFreeAligned(radMemorySpace_User, radMemoryGetCurrentAllocator(), patcherFragmentUsse);
 
     CHK_GXM(sceGxmUnmapMemory(dummyVector));
     radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), dummyVector);

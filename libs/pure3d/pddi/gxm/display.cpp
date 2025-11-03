@@ -63,8 +63,7 @@ gxmDisplay::~gxmDisplay()
 
     /* release and free the device context and rendering context */
     sceGxmDestroyContext(gxm);
-    CHK_GXM(sceGxmUnmapFragmentUsseMemory(fragmentUsseRingBuffer));
-    radMemorySpaceFreeAligned(radMemorySpace_User, radMemoryGetCurrentAllocator(), fragmentUsseRingBuffer);
+    gxmDevice::fragmentUsseFree(fragmentUsseRingBufferUid);
     radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), fragmentRingBuffer);
     radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), vertexRingBuffer);
     radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), vdmRingBuffer);
@@ -183,13 +182,10 @@ bool gxmDisplay::InitDisplay(const pddiDisplayInit* init)
         radMemoryGetCurrentAllocator(),
         SCE_GXM_DEFAULT_FRAGMENT_RING_BUFFER_SIZE);
     uint32_t fragmentUsseRingBufferOffset;
-    radMemorySetAllocationName("fragmentUsseRingBuffer");
-    fragmentUsseRingBuffer = radMemorySpaceAllocAligned(
-        radMemorySpace_User,
-        radMemoryGetCurrentAllocator(),
+    void* fragmentUsseRingBuffer = gxmDevice::fragmentUsseAlloc(
         SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE,
-        4096);
-    CHK_GXM(sceGxmMapFragmentUsseMemory(fragmentUsseRingBuffer, SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE, &fragmentUsseRingBufferOffset));
+        &fragmentUsseRingBufferUid,
+        &fragmentUsseRingBufferOffset);
 
     // set up parameters and create the context
     memset(&contextParams, 0, sizeof(SceGxmContextParams));

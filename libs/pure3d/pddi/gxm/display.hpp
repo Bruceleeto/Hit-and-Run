@@ -116,7 +116,7 @@ private:
     void* vdmRingBuffer;
     void* vertexRingBuffer;
     void* fragmentRingBuffer;
-    void* fragmentUsseRingBuffer;
+    SceUID fragmentUsseRingBufferUid;
 };
 
 #endif

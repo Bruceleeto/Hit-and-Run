@@ -127,9 +127,9 @@ protected:
     void* vertexUniformBuffer;
     void* fragmentUniformBuffer;
 
+    SceUID patcherVertexUsseUid;
+    SceUID patcherFragmentUsseUid;
     void* patcherBuffer;
-    void* patcherVertexUsse;
-    void* patcherFragmentUsse;
     SceGxmShaderPatcher* shaderPatcher;
 
 //   int nBuffered;
