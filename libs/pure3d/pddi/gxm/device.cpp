@@ -196,7 +196,7 @@ void* gxmDevice::vertexUsseAlloc(uint32_t size, SceUID* uid, uint32_t* usseOffse
     size = ALIGN(size, 4096);
 
     // allocate some memory
-    *uid = sceKernelAllocMemBlock("basic", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, size, NULL);
+    *uid = sceKernelAllocMemBlock("vertexUsse", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, size, NULL);
     PDDIASSERT(*uid >= SCE_OK);
 
     // grab the base address
@@ -238,7 +238,7 @@ void* gxmDevice::fragmentUsseAlloc(uint32_t size, SceUID* uid, uint32_t* usseOff
     size = ALIGN(size, 4096);
 
     // allocate some memory
-    *uid = sceKernelAllocMemBlock("basic", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, size, NULL);
+    *uid = sceKernelAllocMemBlock("fragmentUsse", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, size, NULL);
     PDDIASSERT(*uid >= SCE_OK);
 
     // grab the base address

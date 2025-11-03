@@ -161,7 +161,7 @@ bool gxmDisplay::InitDisplay(const pddiDisplayInit* init)
 
     // map external memory heaps
     IRadMemoryHeap* userHeap = (IRadMemoryHeap*)radMemorySpaceGetAllocator(radMemorySpace_User, radMemoryGetCurrentAllocator());
-    CHK_GXM(sceGxmMapMemory(userHeap->GetStartOfMemory(), userHeap->GetSize(), SCE_GXM_MEMORY_ATTRIB_RW));
+    CHK_GXM(sceGxmMapMemory(userHeap->GetStartOfMemory(), userHeap->GetSize(), SCE_GXM_MEMORY_ATTRIB_READ));
     IRadMemoryHeap* cdramHeap = (IRadMemoryHeap*)radMemorySpaceGetAllocator(radMemorySpace_Cdram, radMemoryGetCurrentAllocator());
     CHK_GXM(sceGxmMapMemory(cdramHeap->GetStartOfMemory(), cdramHeap->GetSize(), SCE_GXM_MEMORY_ATTRIB_RW));
 
