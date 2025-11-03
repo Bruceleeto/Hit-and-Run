@@ -303,7 +303,11 @@ enum radMemorySpace
     radMemorySpace_Main,        // Gamecube main memory.
     radMemorySpace_Aram         // Gamecube sound memory space.
 #endif
-#if defined (RAD_WIN32) || defined (RAD_XBOX)
+#ifdef RAD_VITA
+    radMemorySpace_Main,        // Vita main memory.
+    radMemorySpace_User,        // Vita GPU-mapped memory.
+    radMemorySpace_Cdram        // Vita video memory.
+#elif defined (RAD_WIN32) || defined (RAD_XBOX)
     radMemorySpace_Main         // Win/Xbox main memory.
 #endif
 };
@@ -425,6 +429,12 @@ struct IRadMemoryHeap : public IRadMemoryAllocator
     virtual void AllowFreeing( const bool freeingAllowed )
     {
         rAssertMsg( false, "function not implemented for this class" );
+    };
+
+    virtual void * GetStartOfMemory( void )
+    {
+        rAssertMsg( false, "function not implemented for this class" );
+        return NULL;
     };
 
 	//

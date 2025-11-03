@@ -58,7 +58,6 @@ protected:
     pddiLockInfo lock;
 
     uint8_t** bits;
-    SceUID* uids;
 };
 #endif
 

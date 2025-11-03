@@ -129,19 +129,19 @@ bool gxmTexture::Create(int x, int y, int bpp, int alphaDepth, int nMip, pddiTex
     lock.depth = bpp;
     lock.format = PickPixelFormat(textureType, bpp, alphaDepth);
 
+    radMemorySetAllocationName("gxmTexture");
     bits = new uint8_t* [nMipMap + 1];
-    uids = new SceUID [nMipMap + 1];
     if (type == PDDI_TEXTYPE_DXT1 || type == PDDI_TEXTYPE_DXT3 || type == PDDI_TEXTYPE_DXT5)
     {
         unsigned int blocksize = type == PDDI_TEXTYPE_DXT1 ? 8 : 16;
         for(int i = 0; i < nMipMap+1; i++)
-            bits[i] = (uint8_t*)gxmDevice::graphicsAlloc(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW, size_t(ceil(double(xSize>>i)/4)*ceil(double(ySize>>i)/4)*blocksize), SCE_GXM_TEXTURE_ALIGNMENT, SCE_GXM_MEMORY_ATTRIB_READ, &uids[i]);
+            bits[i] = (uint8_t*)radMemorySpaceAllocAligned(radMemorySpace_Cdram, radMemoryGetCurrentAllocator(), size_t(ceil(double(xSize>>i)/4)*ceil(double(ySize>>i)/4)*blocksize), SCE_GXM_TEXTURE_ALIGNMENT);
         CHK_GXM(sceGxmTextureInitSwizzled(&texture, bits[0], PickPixelFormat(lock.format), xSize, ySize, nMipMap));
     }
     else
     {
-        for(int i = 0; i < nMipMap + 1; i++)
-            bits[i] = (uint8_t*)gxmDevice::graphicsAlloc(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW, ((xSize>>i)*(ySize>>i)*bpp)/8, SCE_GXM_TEXTURE_ALIGNMENT, SCE_GXM_MEMORY_ATTRIB_READ, &uids[i]);
+        for(int i = 0; i < nMipMap+1; i++)
+            bits[i] = (uint8_t*)radMemorySpaceAllocAligned(radMemorySpace_Cdram, radMemoryGetCurrentAllocator(), ((xSize>>i)*(ySize>>i)*bpp)/8, SCE_GXM_TEXTURE_ALIGNMENT);
         CHK_GXM(sceGxmTextureInitLinear(&texture, bits[0], PickPixelFormat(lock.format), xSize, ySize, nMipMap));
     }
 
@@ -193,10 +193,9 @@ gxmTexture::~gxmTexture()
 {
     if(bits)
     {
-        for(int i = 0; i < nMipMap + 1; i++)
-            gxmDevice::graphicsFree(uids[i]);
+        for(int i = 0; i < nMipMap+1; i++)
+            radMemorySpaceFreeAligned(radMemorySpace_Cdram, radMemoryGetCurrentAllocator(), bits[i]);
         delete [] bits;
-        delete [] uids;
     }
 
     context->ADD_STAT(PDDI_STAT_TEXTURE_ALLOC_32BIT, -(float)((xSize * ySize * lock.depth) / 8192));

@@ -8,6 +8,7 @@
 #include <pddi/gxm/display.hpp>
 #include <pddi/base/debug.hpp>
 #include <SDL.h>
+#include <radmemory.hpp>
 
 #include <stdio.h>
 #include <string.h>
@@ -54,15 +55,22 @@ gxmDisplay::gxmDisplay(pddiDisplayInfo* info)
 
 gxmDisplay::~gxmDisplay()
 {
+    // map external memory heaps
+    IRadMemoryHeap* userHeap = (IRadMemoryHeap*)radMemorySpaceGetAllocator(radMemorySpace_User, radMemoryGetCurrentAllocator());
+    CHK_GXM(sceGxmUnmapMemory(userHeap->GetStartOfMemory()));
+    IRadMemoryHeap* cdramHeap = (IRadMemoryHeap*)radMemorySpaceGetAllocator(radMemorySpace_Cdram, radMemoryGetCurrentAllocator());
+    CHK_GXM(sceGxmUnmapMemory(cdramHeap->GetStartOfMemory()));
+
     /* release and free the device context and rendering context */
     sceGxmDestroyContext(gxm);
-    gxmDevice::fragmentUsseFree(fragmentUsseRingBufferUid);
-    gxmDevice::graphicsFree(fragmentRingBufferUid);
-    gxmDevice::graphicsFree(vertexRingBufferUid);
-    gxmDevice::graphicsFree(vdmRingBufferUid);
+    CHK_GXM(sceGxmUnmapFragmentUsseMemory(fragmentUsseRingBuffer));
+    radMemorySpaceFreeAligned(radMemorySpace_User, radMemoryGetCurrentAllocator(), fragmentUsseRingBuffer);
+    radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), fragmentRingBuffer);
+    radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), vertexRingBuffer);
+    radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), vdmRingBuffer);
     for(uint32_t i = 0; i < GetNumColourBuffer(); ++i)
-        gxmDevice::graphicsFree(displayBufferUid[i]);
-    gxmDevice::graphicsFree(depthBufferUid);
+        radMemorySpaceFreeAligned(radMemorySpace_Cdram, radMemoryGetCurrentAllocator(), displayBufferData[i]);
+    radMemorySpaceFreeAligned(radMemorySpace_Cdram, radMemoryGetCurrentAllocator(), depthBufferData);
     free(contextParams.hostMem);
     sceGxmTerminate();
 
@@ -152,30 +160,36 @@ bool gxmDisplay::InitDisplay(const pddiDisplayInit* init)
     if(!CHK_GXM(sceGxmInitialize(&initializeParams)))
         return false;
 
+    // map external memory heaps
+    IRadMemoryHeap* userHeap = (IRadMemoryHeap*)radMemorySpaceGetAllocator(radMemorySpace_User, radMemoryGetCurrentAllocator());
+    CHK_GXM(sceGxmMapMemory(userHeap->GetStartOfMemory(), userHeap->GetSize(), SCE_GXM_MEMORY_ATTRIB_RW));
+    IRadMemoryHeap* cdramHeap = (IRadMemoryHeap*)radMemorySpaceGetAllocator(radMemorySpace_Cdram, radMemoryGetCurrentAllocator());
+    CHK_GXM(sceGxmMapMemory(cdramHeap->GetStartOfMemory(), cdramHeap->GetSize(), SCE_GXM_MEMORY_ATTRIB_RW));
+
     // allocate ring buffer memory using default sizes
-    void* vdmRingBuffer = gxmDevice::graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-        SCE_GXM_DEFAULT_VDM_RING_BUFFER_SIZE,
-        4,
-        SCE_GXM_MEMORY_ATTRIB_READ,
-        &vdmRingBufferUid);
-    void* vertexRingBuffer = gxmDevice::graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-        SCE_GXM_DEFAULT_VERTEX_RING_BUFFER_SIZE,
-        4,
-        SCE_GXM_MEMORY_ATTRIB_READ,
-        &vertexRingBufferUid);
-    void* fragmentRingBuffer = gxmDevice::graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-        SCE_GXM_DEFAULT_FRAGMENT_RING_BUFFER_SIZE,
-        4,
-        SCE_GXM_MEMORY_ATTRIB_READ,
-        &fragmentRingBufferUid);
+    radMemorySetAllocationName("displayBufferData");
+    vdmRingBuffer = radMemorySpaceAlloc(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        SCE_GXM_DEFAULT_VDM_RING_BUFFER_SIZE);
+    radMemorySetAllocationName("vertexRingBuffer");
+    vertexRingBuffer = radMemorySpaceAlloc(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        SCE_GXM_DEFAULT_VERTEX_RING_BUFFER_SIZE);
+    radMemorySetAllocationName("fragmentRingBuffer");
+    fragmentRingBuffer = radMemorySpaceAlloc(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        SCE_GXM_DEFAULT_FRAGMENT_RING_BUFFER_SIZE);
     uint32_t fragmentUsseRingBufferOffset;
-    void* fragmentUsseRingBuffer = gxmDevice::fragmentUsseAlloc(
+    radMemorySetAllocationName("fragmentUsseRingBuffer");
+    fragmentUsseRingBuffer = radMemorySpaceAllocAligned(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
         SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE,
-        &fragmentUsseRingBufferUid,
-        &fragmentUsseRingBufferOffset);
+        4096);
+    CHK_GXM(sceGxmMapFragmentUsseMemory(fragmentUsseRingBuffer, SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE, &fragmentUsseRingBufferOffset));
 
     // set up parameters and create the context
     memset(&contextParams, 0, sizeof(SceGxmContextParams));
@@ -209,18 +223,17 @@ bool gxmDisplay::InitDisplay(const pddiDisplayInit* init)
     // allocate memory and sync objects for display buffers
     uint32_t stride = ALIGN(winWidth, 64);
     displayBufferData.resize(GetNumColourBuffer());
-    displayBufferUid.resize(GetNumColourBuffer());
     displaySurface.resize(GetNumColourBuffer());
     displayBufferSync.resize(GetNumColourBuffer());
     for(uint32_t i = 0; i < GetNumColourBuffer(); ++i)
     {
         // allocate memory for display
-        displayBufferData[i] = gxmDevice::graphicsAlloc(
-            SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
+        radMemorySetAllocationName("displayBufferData");
+        displayBufferData[i] = radMemorySpaceAllocAligned(
+            radMemorySpace_Cdram,
+            radMemoryGetCurrentAllocator(),
             4 * stride * winHeight,
-            SCE_GXM_COLOR_SURFACE_ALIGNMENT,
-            SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-            &displayBufferUid[i]);
+            SCE_GXM_COLOR_SURFACE_ALIGNMENT);
 
         // memset the buffer to black
         for(uint32_t y = 0; y < winHeight; ++y) {
@@ -262,12 +275,12 @@ bool gxmDisplay::InitDisplay(const pddiDisplayInit* init)
     }
 
     // allocate it
-    void* depthBufferData = gxmDevice::graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
+    radMemorySetAllocationName("depthBufferData");
+    depthBufferData = radMemorySpaceAllocAligned(
+        radMemorySpace_Cdram,
+        radMemoryGetCurrentAllocator(),
         4 * sampleCount,
-        SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT,
-        SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-        &depthBufferUid);
+        SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT);
 
     // create the SceGxmDepthStencilSurface structure
     CHK_GXM(sceGxmDepthStencilSurfaceInit(

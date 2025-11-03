@@ -72,6 +72,7 @@ class ExternalMemoryHeap
 			unsigned int* numberOfObjects, unsigned int * lowWaterMark );
 
 		virtual unsigned int GetSize( void );
+        virtual void* GetStartOfMemory( void );
 
 		virtual bool ValidateHeap( void );
 
@@ -108,6 +109,7 @@ class ExternalMemoryHeap
 
         void Free( ExternalMemoryObject * pEmo_Free );
 
+        void * m_pStartOfExternalMemory;
         unsigned int m_ReferenceCount;
 		unsigned int m_HeapSize;
         radMemorySpace m_RadMemorySpace;

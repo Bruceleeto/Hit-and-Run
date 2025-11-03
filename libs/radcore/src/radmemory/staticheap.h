@@ -47,6 +47,7 @@ public:
 		unsigned int* highWaterMark );
 
     void   Release();
+    void*  GetStartOfMemory();
     bool   ValidateHeap();
 protected:
     static size_t Align( const size_t size, const size_t alignment );

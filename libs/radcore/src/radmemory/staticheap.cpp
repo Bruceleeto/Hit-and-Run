@@ -450,6 +450,21 @@ void StaticHeap::Release( void )
 }
 
 //=============================================================================
+// StaticHeap::GetStartOfMemory
+//=============================================================================
+// Description: gets base pointer
+//
+// Parameters:  none
+//
+// Return:      none
+//
+//=============================================================================
+void* StaticHeap::GetStartOfMemory( void )
+{
+    return m_BasePointer;
+}
+
+//=============================================================================
 // StaticHeap::ValidateHeap
 //=============================================================================
 // Description: checks if the heap is valid - doesn nothing right now

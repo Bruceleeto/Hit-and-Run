@@ -12,6 +12,8 @@
 
 #include <pddi/base/debug.hpp>
 #include <p3d/utility.hpp>
+#include <radmemory.hpp>
+
 #include <math.h>
 #include <string.h>
 #include <SDL.h>
@@ -116,22 +118,29 @@ gxmContext::gxmContext(gxmDevice* dev, gxmDisplay* disp) : pddiBaseContext((pddi
     const uint32_t patcherFragmentUsseSize = 64 * 1024;
 
     // allocate memory for buffers and USSE code
-    void* patcherBuffer = device->graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-        patcherBufferSize,
-        4,
-        SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-        &patcherBufferUid);
+    radMemorySetAllocationName("patcherBuffer");
+    patcherBuffer = radMemorySpaceAlloc(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        patcherBufferSize);
+
+    radMemorySetAllocationName("patcherVertexUsse");
     uint32_t patcherVertexUsseOffset;
-    void* patcherVertexUsse = device->vertexUsseAlloc(
+    patcherVertexUsse = radMemorySpaceAllocAligned(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
         patcherVertexUsseSize,
-        &patcherVertexUsseUid,
-        &patcherVertexUsseOffset);
+        4096);
+    CHK_GXM(sceGxmMapVertexUsseMemory(patcherBuffer, patcherVertexUsseSize, &patcherVertexUsseOffset));
+
+    radMemorySetAllocationName("patcherFragmentUsse");
     uint32_t patcherFragmentUsseOffset;
-    void* patcherFragmentUsse = device->fragmentUsseAlloc(
+    patcherFragmentUsse = radMemorySpaceAllocAligned(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
         patcherFragmentUsseSize,
-        &patcherFragmentUsseUid,
-        &patcherFragmentUsseOffset);
+        4096);
+    CHK_GXM(sceGxmMapFragmentUsseMemory(patcherFragmentUsse, patcherFragmentUsseSize, &patcherFragmentUsseOffset));
 
     // create a shader patcher
     SceGxmShaderPatcherParams patcherParams;
@@ -165,12 +174,11 @@ gxmContext::gxmContext(gxmDevice* dev, gxmDisplay* disp) : pddiBaseContext((pddi
     alphaTestProgram = new gxmProgram(shaderPatcher, p3d::openFile("app0:/shaders/alpha_cg.gxp", false));
     alphaTestProgram->AddRef();
 
-    dummyVector = (pddiVector4*)device->graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-        sizeof(pddiVector4),
-        4,
-        SCE_GXM_MEMORY_ATTRIB_READ,
-        &dummyVectorUid);
+    radMemorySetAllocationName("dummyVector");
+    dummyVector = (pddiVector4*)radMemorySpaceAlloc(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        sizeof(pddiVector4));
     dummyVector->Set(1.0f, 1.0f, 1.0f);
     CHK_GXM(sceGxmSetVertexStream(context, 1, dummyVector));
 
@@ -189,8 +197,14 @@ gxmContext::~gxmContext()
     delete extGamma;
 
     CHK_GXM(sceGxmShaderPatcherDestroy(shaderPatcher));
-    gxmDevice::graphicsFree(dummyVectorUid);
-    gxmDevice::graphicsFree(patcherBufferUid);
+    radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), patcherBuffer);
+    CHK_GXM(sceGxmUnmapVertexUsseMemory(patcherVertexUsse));
+    radMemorySpaceFreeAligned(radMemorySpace_User, radMemoryGetCurrentAllocator(), patcherVertexUsse);
+    CHK_GXM(sceGxmUnmapFragmentUsseMemory(patcherFragmentUsse));
+    radMemorySpaceFreeAligned(radMemorySpace_User, radMemoryGetCurrentAllocator(), patcherFragmentUsse);
+
+    CHK_GXM(sceGxmUnmapMemory(dummyVector));
+    radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), dummyVector);
 
     display->SetContext(NULL);
     display->Release();
@@ -246,7 +260,7 @@ void gxmContext::Clear(unsigned bufferMask)
 
     PushState((pddiStateMask)(PDDI_STATE_RENDER | PDDI_STATE_VIEW));
 
-    SetProjectionMode(PDDI_PROJECTION_DEVICE);
+    SetProjectionMode(PDDI_PROJECTION_ORTHOGRAPHIC);
     EnableZBuffer(false);
     if(bufferMask & PDDI_BUFFER_COLOUR)
         SetColourWrite(true, true, true, true);
@@ -254,6 +268,7 @@ void gxmContext::Clear(unsigned bufferMask)
         SetColourWrite(false, false, false, false);
     SetZWrite(bufferMask & PDDI_BUFFER_DEPTH);
 
+    PushIdentityMatrix(PDDI_MATRIX_MODELVIEW);
     pddiVector a, b, c, d;
     a.Set( -1.0f, -1.0f, state.viewState->clearDepth);
     b.Set(3.0f, -1.0f, state.viewState->clearDepth);
@@ -263,6 +278,7 @@ void gxmContext::Clear(unsigned bufferMask)
     stream->Vertex(&b, state.viewState->clearColour);
     stream->Vertex(&c, state.viewState->clearColour);
     EndPrims(stream);
+    PopMatrix(PDDI_MATRIX_MODELVIEW);
 
     PopState((pddiStateMask)(PDDI_STATE_RENDER | PDDI_STATE_VIEW));
 }
@@ -574,12 +590,11 @@ gxmPrimBuffer::gxmPrimBuffer(gxmContext* c, pddiPrimType type, unsigned vertexFo
 
     mem = stride * nVertex;
     PDDIASSERT(mem);
-    buffer = (uint8_t*)gxmDevice::graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-        mem,
-        4,
-        SCE_GXM_MEMORY_ATTRIB_READ,
-        &bufferUid);
+    radMemorySetAllocationName("gxmPrimBuffer");
+    buffer = (uint8_t*)radMemorySpaceAlloc(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        mem);
 
     unsigned char* ptr = buffer;
     coord = (float*)ptr;
@@ -611,12 +626,11 @@ gxmPrimBuffer::gxmPrimBuffer(gxmContext* c, pddiPrimType type, unsigned vertexFo
     }
 
     PDDIASSERT(indexCount);
-    indices = (uint16_t*)gxmDevice::graphicsAlloc(
-        SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-        indexCount * sizeof( uint16_t ),
-        2,
-        SCE_GXM_MEMORY_ATTRIB_READ,
-        &indicesUid);
+    radMemorySetAllocationName("gxmPrimBuffer");
+    indices = (uint16_t*)radMemorySpaceAlloc(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        indexCount * sizeof(uint16_t));
 
     if(!nIndex)
     {
@@ -646,9 +660,9 @@ gxmPrimBuffer::~gxmPrimBuffer()
 {
     delete stream;
 
-    gxmDevice::graphicsFree(bufferUid);
-    if (indices)
-        gxmDevice::graphicsFree(indicesUid);
+    radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), buffer);
+    if(indices)
+        radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), indices);
 
     context->ADD_STAT(PDDI_STAT_BUFFERED_COUNT, -1);
     context->ADD_STAT(PDDI_STAT_BUFFERED_ALLOC, -mem / 1024.0f);

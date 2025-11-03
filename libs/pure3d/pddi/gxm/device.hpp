@@ -34,13 +34,6 @@ public:
 
     void Release(void);
 
-    static void* graphicsAlloc( SceKernelMemBlockType type, uint32_t size, uint32_t alignment, uint32_t attribs, SceUID* uid );
-    static void  graphicsFree( SceUID uid );
-    static void* vertexUsseAlloc( uint32_t size, SceUID* uid, uint32_t* usseOffset );
-    static void  vertexUsseFree( SceUID uid );
-    static void* fragmentUsseAlloc( uint32_t size, SceUID* uid, uint32_t* usseOffset );
-    static void  fragmentUsseFree( SceUID uid );
-
 protected:
     bool initialized;
     pddiRenderContext* context;

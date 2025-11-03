@@ -101,11 +101,10 @@ private:
     SceGxmContext* gxm;
     SceGxmRenderTarget* renderTarget;
 
-    SceUID depthBufferUid;
+    void* depthBufferData;
     SceGxmDepthStencilSurface depthSurface;
 
     std::vector<void*> displayBufferData;
-    std::vector<SceUID> displayBufferUid;
     std::vector<SceGxmColorSurface> displaySurface;
     std::vector<SceGxmSyncObject*> displayBufferSync;
 
@@ -114,10 +113,10 @@ private:
 
     float beginTime;
 
-    SceUID vdmRingBufferUid;
-    SceUID vertexRingBufferUid;
-    SceUID fragmentRingBufferUid;
-    SceUID fragmentUsseRingBufferUid;
+    void* vdmRingBuffer;
+    void* vertexRingBuffer;
+    void* fragmentRingBuffer;
+    void* fragmentUsseRingBuffer;
 };
 
 #endif

@@ -6473,9 +6473,14 @@ public radRefCount
 	}
 
     virtual unsigned int GetSize( void )
-	{
-		return m_SizeOfMemory;
-	}       
+    {
+        return m_SizeOfMemory;
+    }
+
+    virtual void * GetStartOfMemory( void )
+    {
+            return (void *)m_StartOfMemory;
+    }
 
     virtual void Chain( IRadMemoryHeap* pMemoryHeap ) { rAssert( 0 ); }
 

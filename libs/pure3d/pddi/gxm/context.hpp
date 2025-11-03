@@ -127,11 +127,9 @@ protected:
     void* vertexUniformBuffer;
     void* fragmentUniformBuffer;
 
-    SceUID defaultIndicesUid;
-    SceUID dummyVectorUid;
-    SceUID patcherBufferUid;
-    SceUID patcherVertexUsseUid;
-    SceUID patcherFragmentUsseUid;
+    void* patcherBuffer;
+    void* patcherVertexUsse;
+    void* patcherFragmentUsse;
     SceGxmShaderPatcher* shaderPatcher;
 
 //   int nBuffered;
@@ -208,8 +206,6 @@ protected:
     SceGxmVertexProgram* vertexShader;
 
     unsigned mem;
-    SceUID bufferUid;
-    SceUID indicesUid;
 };
     
 #endif

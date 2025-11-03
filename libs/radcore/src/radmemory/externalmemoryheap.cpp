@@ -458,8 +458,7 @@ void ExternalMemoryHeap::Initialize
     const char * pName
 )
 {
-
-
+    m_pStartOfExternalMemory = pStartOfExternalMemory;
     m_HeapSize = sizeOfExternalMemory;
     m_RadMemorySpace = memorySpace;
 
@@ -522,6 +521,7 @@ ExternalMemoryHeap::ExternalMemoryHeap
     void
 )
     :
+    m_pStartOfExternalMemory( NULL ),
     m_ReferenceCount( 1 ),
     m_HeapSize( 0 ),
     m_pEmo_First( NULL ),
@@ -1040,4 +1040,13 @@ void ExternalMemoryHeap::Free
 /* virtual */ bool ExternalMemoryHeap::ValidateHeap( void )
 {
     return true;
+}
+
+//============================================================================
+// ExternalMemoryHeap::GetStartOfMemory
+//============================================================================
+
+/* virtual */ void* ExternalMemoryHeap::GetStartOfMemory( void )
+{
+    return m_pStartOfExternalMemory;
 }
