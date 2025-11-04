@@ -29,6 +29,7 @@ struct gxmTextureEnv
     pddiBlendMode alphaBlendMode;
     pddiCompareMode alphaCompareMode;
     float alphaRef;
+    int writeMask;
 
     bool lit;
     bool twoSided;
@@ -84,6 +85,8 @@ public:
     void EnableAlphaTest(int);
     void SetAlphaCompare(int compare);
     void SetAlphaRef(float ref);
+
+    void SetColourWrite(int mask);
 
     int  CountDevPasses(void);
     void SetDevPass(unsigned);

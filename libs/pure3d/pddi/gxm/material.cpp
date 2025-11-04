@@ -39,6 +39,7 @@ pddiShadeIntTable gxmMat::intTable[] =
     {PDDI_SP_ALPHACOMPARE , SHADE_INT(&gxmMat::SetAlphaCompare)},
     {PDDI_SP_TWOSIDED , SHADE_INT(&gxmMat::SetTwoSided)},
     {PDDI_SP_EMISSIVEALPHA , SHADE_INT(&gxmMat::SetEmissiveAlpha)},
+    {PDDI_SP_COLOURWRITE , SHADE_INT(&gxmMat::SetColourWrite)},
     {PDDI_SP_NULL , NULL}
 };
 
@@ -77,7 +78,7 @@ SceGxmTextureAddrMode uvTable[3] =
 
 SceGxmBlendFunc alphaBlendFunc[8] =
 {
-    { SCE_GXM_BLEND_FUNC_ADD },             //PDDI_BLEND_NONE,
+    { SCE_GXM_BLEND_FUNC_NONE },            //PDDI_BLEND_NONE,
     { SCE_GXM_BLEND_FUNC_ADD },             //PDDI_BLEND_ALPHA,
     { SCE_GXM_BLEND_FUNC_ADD },             //PDDI_BLEND_ADD,
     { SCE_GXM_BLEND_FUNC_REVERSE_SUBTRACT },//PDDI_BLEND_SUBTRACT,
@@ -131,6 +132,8 @@ gxmMat::gxmMat(gxmContext* c)
         texEnv[i].alphaCompareMode = PDDI_COMPARE_GREATEREQUAL;
         texEnv[i].alphaBlendMode = PDDI_BLEND_NONE;
         texEnv[i].alphaRef = 0.5f;
+
+        texEnv[i].writeMask = PDDI_WRITE_ALL;
     }
     texEnv[0].enabled = true;
     pass = 0;
@@ -286,6 +289,12 @@ void gxmMat::SetAlphaRef(float ref)
     valid = false;
 }
 
+void gxmMat::SetColourWrite(int mask)
+{
+    texEnv[pass].writeMask = mask;
+    valid = false;
+}
+
 int gxmMat::CountDevPasses(void) 
 {
     return 1;
@@ -307,14 +316,14 @@ void gxmMat::SetDevPass(unsigned pass)
         program = context->GetFragmentProgram(&texEnv[i]);
         program->AddRef();
 
-        if(texEnv[i].alphaBlendMode == PDDI_BLEND_NONE)
+        if(texEnv[i].alphaBlendMode == PDDI_BLEND_NONE && texEnv[i].writeMask == PDDI_WRITE_ALL)
         {
             shader = program->PatchFragmentShader(nullptr, context->GetDisplay()->GetMSAAMode());
         }
         else
         {
             SceGxmBlendInfo blend = {
-                SCE_GXM_COLOR_MASK_ALL,
+                (uint8_t)texEnv[i].writeMask,
                 alphaBlendFunc[texEnv[i].alphaBlendMode],
                 alphaBlendFunc[texEnv[i].alphaBlendMode],
                 alphaBlendTable[texEnv[i].alphaBlendMode][0],
