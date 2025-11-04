@@ -207,24 +207,26 @@ void gxmContext::Clear(unsigned bufferMask)
     pddiBaseContext::Clear(bufferMask);
 
     PushState((pddiStateMask)(PDDI_STATE_RENDER | PDDI_STATE_VIEW));
-
-    SetProjectionMode(PDDI_PROJECTION_ORTHOGRAPHIC);
-    EnableZBuffer(false);
+    SetCamera(0.0f, 1.0f, 1.0f, 1.0f);
+    SetProjectionMode(PDDI_PROJECTION_DEVICE);
+    EnableZBuffer(bufferMask & PDDI_BUFFER_DEPTH);
+    SetZCompare(PDDI_COMPARE_ALWAYS);
     if(bufferMask & PDDI_BUFFER_COLOUR)
         SetColourWrite(true, true, true, true);
     else
         SetColourWrite(false, false, false, false);
-    SetZWrite(bufferMask & PDDI_BUFFER_DEPTH);
 
     PushIdentityMatrix(PDDI_MATRIX_MODELVIEW);
     pddiVector a, b, c, d;
-    a.Set( -1.0f, -1.0f, state.viewState->clearDepth);
-    b.Set(3.0f, -1.0f, state.viewState->clearDepth);
-    c.Set(-1.0f, 3.0f, state.viewState->clearDepth);
-    pddiPrimStream* stream = BeginPrims(defaultShader, PDDI_PRIM_TRIANGLES, PDDI_V_C, 3);
+    a.Set(0.0f, 0.0f, state.viewState->clearDepth);
+    b.Set(display->GetWidth(), 0.0f, state.viewState->clearDepth);
+    c.Set(0.0f, display->GetHeight(), state.viewState->clearDepth);
+    d.Set(display->GetWidth(), display->GetHeight(), state.viewState->clearDepth);
+    pddiPrimStream* stream = BeginPrims(defaultShader, PDDI_PRIM_TRISTRIP, PDDI_V_C, 4);
     stream->Vertex(&a, state.viewState->clearColour);
     stream->Vertex(&b, state.viewState->clearColour);
     stream->Vertex(&c, state.viewState->clearColour);
+    stream->Vertex(&d, state.viewState->clearColour);
     EndPrims(stream);
     PopMatrix(PDDI_MATRIX_MODELVIEW);
 
