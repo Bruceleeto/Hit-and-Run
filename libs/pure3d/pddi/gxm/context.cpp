@@ -240,8 +240,11 @@ void gxmContext::SetupHardwareProjection(void)
             projection.SetOrthographic(0, display->GetWidth(),
                       display->GetHeight(), 0,
                       (state.viewState->camera.nearPlane),(state.viewState->camera.farPlane));
-            sceGxmSetViewport(context, 0, display->GetWidth(), 0, display->GetHeight(),
-                state.viewState->zRange[0], state.viewState->zRange[1] - state.viewState->zRange[0]);
+            sceGxmSetViewport(context,
+                display->GetWidth() / 2.0f, display->GetWidth() / 2.0f,
+                display->GetHeight() / 2.0f, -display->GetHeight() / 2.0f,
+                (state.viewState->zRange[0] + state.viewState->zRange[1]) / 2.0f,
+                (state.viewState->zRange[1] - state.viewState->zRange[0]) / 2.0f);
             break;
 
         case PDDI_PROJECTION_ORTHOGRAPHIC :
@@ -254,7 +257,8 @@ void gxmContext::SetupHardwareProjection(void)
                               (state.viewState->viewWindow.right - state.viewState->viewWindow.left) * display->GetWidth() / 2.0f,
                               (state.viewState->viewWindow.top + 0.5f) * display->GetHeight(),
                               (state.viewState->viewWindow.top - state.viewState->viewWindow.bottom) * display->GetHeight() / 2.0f,
-                              state.viewState->zRange[0], state.viewState->zRange[1] - state.viewState->zRange[0]);
+                              (state.viewState->zRange[0] + state.viewState->zRange[1]) / 2.0f,
+                              (state.viewState->zRange[1] - state.viewState->zRange[0]) / 2.0f);
             break;
 
         case PDDI_PROJECTION_PERSPECTIVE :
@@ -265,7 +269,8 @@ void gxmContext::SetupHardwareProjection(void)
                             (state.viewState->viewWindow.right - state.viewState->viewWindow.left) * display->GetWidth() / 2.0f,
                             (state.viewState->viewWindow.top + 0.5f) * display->GetHeight(),
                             (state.viewState->viewWindow.top - state.viewState->viewWindow.bottom) * display->GetHeight() / 2.0f,
-                            state.viewState->zRange[0], state.viewState->zRange[1] - state.viewState->zRange[0]);
+                            (state.viewState->zRange[0] + state.viewState->zRange[1]) / 2.0f,
+                            (state.viewState->zRange[1] - state.viewState->zRange[0]) / 2.0f);
             break;
         default:
             PDDIASSERTMSG(0, "Bad projection mode","");
