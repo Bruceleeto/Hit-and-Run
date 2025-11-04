@@ -55,6 +55,17 @@ enum pddiBufferMask
     PDDI_BUFFER_ALL     = 0xffffffff
 };
 
+// colour write mask
+enum pddiWriteMask
+{
+    PDDI_WRITE_NONE  = 0,
+    PDDI_WRITE_ALPHA = 1,
+    PDDI_WRITE_RED   = 2,
+    PDDI_WRITE_GREEN = 4,
+    PDDI_WRITE_BLUE  = 8,
+    PDDI_WRITE_ALL   = 0xf
+};
+
 // z buffer comparison flags
 enum pddiCompareMode
 {

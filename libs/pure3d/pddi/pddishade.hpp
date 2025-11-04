@@ -50,6 +50,7 @@ const unsigned PDDI_SP_CUBE_ZPOS     = PDDI_FOURCC('C','B','Z','P');
 const unsigned PDDI_SP_CUBE_ZNEG     = PDDI_FOURCC('C','B','Z','N');
 const unsigned PDDI_SP_TOONSTYLE     = PDDI_FOURCC('T','N','S','T');  // 0 = default, 1 = silhouette, 2 = depth/metal
 const unsigned PDDI_SP_ROTVEC        = PDDI_FOURCC('R','O','T','V');  // rotation vector for sphere map
+const unsigned PDDI_SP_COLOURWRITE   = PDDI_FOURCC('C','L','R','W');
 												   
 
 // jul5/2001 amb - mipmap control

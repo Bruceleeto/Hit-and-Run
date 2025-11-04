@@ -143,6 +143,7 @@ tShadowGenerator::tShadowGenerator() :
     volumeShader->AddRef();
     volumeShader->SetInt(PDDI_SP_SHADEMODE, PDDI_SHADE_FLAT);
     volumeShader->SetInt(PDDI_SP_ALPHATEST , false);
+    volumeShader->SetInt(PDDI_SP_COLOURWRITE, PDDI_WRITE_NONE);
 
 #ifndef RAD_GAMECUBE
     volumeShader->SetInt(PDDI_SP_BLENDMODE , PDDI_BLEND_ALPHA);

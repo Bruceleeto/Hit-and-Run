@@ -340,6 +340,9 @@ void FePure3dObject::Render()
         {
             SetDrawable( dynamic_cast<tDrawable*>( FeApp::GetInstance()->GetFeResourceManager().GetResource( index ) ) );
             drawable = GetDrawable();
+
+            tShaderIntBroadcast colourWrite(PDDI_SP_COLOURWRITE, m_colourWriteEnabled ? PDDI_WRITE_ALL : PDDI_BLEND_ALPHA);
+            drawable->ProcessShaders(colourWrite);
         }
 
         rAssert( drawable != NULL );
