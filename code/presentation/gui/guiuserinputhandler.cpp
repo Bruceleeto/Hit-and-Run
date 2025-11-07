@@ -25,6 +25,7 @@
 #include <raddebug.hpp>
 
 #include <contexts/context.h>
+#include <debug/profiler.h>
 
 //===========================================================================
 // Global Data, Local Data, Local Classes
@@ -312,6 +313,9 @@ void CGuiUserInputHandler::Select( int controllerId )
 void CGuiUserInputHandler::Back( int controllerId )
 {
     GetGuiSystem()->HandleMessage( GUI_MSG_CONTROLLER_BACK, controllerId );
+#ifdef PROFILER_ENABLED
+    Profiler::GetInstance()->NextPage();
+#endif
 }
 
 

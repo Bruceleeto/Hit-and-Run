@@ -423,7 +423,7 @@ void Profiler::Render(void)
     // Display header info.
     //
     char fps[256];    
-    sprintf(fps,"Game Time: %3.1f(fps) : %3.1f(ms)  Adjusted Time: %3.1f(fps) : %3.1f(ms)", 1/(mFrameRate/1000), mFrameRate, 1/(mFrameRateAdjusted/1000), mFrameRateAdjusted);
+    sprintf(fps,"Game Time: %3.1f(fps) : %3.1f(ms)  Adjusted Time: %3.1f(fps) : %3.1f(ms)\tPage %d/%d", 1/(mFrameRate/1000), mFrameRate, 1/(mFrameRateAdjusted/1000), mFrameRateAdjusted, sPage+1, NUM_VISIBLE_PANES);
 
 //    const int SHADOW_OFFSET = 1;
 //    tColour SHADOW_COLOUR(0,0,0);
