@@ -31,6 +31,8 @@ void main(float3 position      : POSITION,
     float3 diff = ecm.rgb + acm.rgb * acs.rgb;
     float3 spec = float3(0.0);
     for (int i = 0; i < 4; i++) {
+        if (lights[i].position.w < 0.0f) continue;
+
         float3 VP = direction(V, lights[i].position);
         float f = product(n,VP) != 0.0 ? 1.0 : 0.0;
         float3 h = normalize(VP + float3(0.0, 0.0, 1.0));

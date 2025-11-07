@@ -133,7 +133,7 @@ void gxmProgram::SetLightState( void* buffer, int handle, const pddiLight* light
     if(handle >= PDDI_MAX_LIGHTS)
         return;
 
-    float dir[4] = { 0.0f };
+    float dir[4] = { 0.0f, 0.0f, 0.0f, -1.0f };
     if (lightState->enabled && lit)
     {
         switch(lightState->type)
