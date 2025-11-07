@@ -101,7 +101,7 @@ protected:
     void  BeginTiming(void);
     float EndTiming(void);
 
-    void SetVertexShader(unsigned int vertexType, uint16_t stride);
+    void SetVertexShader(SceGxmVertexProgram* vert);
     void FlushVertexStreams();
 
     static void* patcherHostAlloc(void* userData, uint32_t size);
@@ -176,6 +176,7 @@ public:
     unsigned GetMemImageLength() {return 0; }
     void SetMemImageParam(unsigned param, unsigned value) { /**/ }
 
+    SceGxmVertexProgram* GetVertexShader() { return vertexShader; }
     unsigned GetVertexFormat() { return vertexType; }
     unsigned GetStride() { return stride; }
     void Display(void);
@@ -206,6 +207,8 @@ protected:
 
     bool valid;
     SceGxmVertexProgram* vertexShader;
+    SceGxmPrecomputedDraw precomputed;
+    unsigned char* state;
 
     unsigned mem;
 };

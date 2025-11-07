@@ -371,7 +371,8 @@ pddiPrimStream* gxmContext::BeginPrims(pddiShader* mat, pddiPrimType primType, u
     streamsHead.value = (streamsHead.value + 1) % BUFFERED_VERTS;
     streams[streamsHead.value] = thePrimStream.buffer;
 
-    SetVertexShader(vertexType, ((gxmPrimBuffer*)thePrimStream.buffer)->GetStride());
+    SceGxmVertexProgram* vert = vertexProgram->PatchVertexShader(vertexType, ((gxmPrimBuffer*)thePrimStream.buffer)->GetStride());
+    SetVertexShader(((gxmPrimBuffer*)thePrimStream.buffer)->GetVertexShader());
     pddiBaseShader* material = (pddiBaseShader*)mat;
     ADD_STAT(PDDI_STAT_MATERIAL_OPS, !material->IsCurrent());
     material->SetMaterial();
@@ -613,6 +614,17 @@ gxmPrimBuffer::gxmPrimBuffer(gxmContext* c, pddiPrimType type, unsigned vertexFo
         }
     }
 
+    vertexShader = context->vertexProgram->PatchVertexShader(vertexType, stride);
+    state = (uint8_t*)radMemorySpaceAllocAligned(
+        radMemorySpace_User,
+        radMemoryGetCurrentAllocator(),
+        sceGxmGetPrecomputedDrawSize(vertexShader),
+        16);
+    CHK_GXM(sceGxmPrecomputedDrawInit(&precomputed, vertexShader, state));
+    const void* streams[] = { buffer, context->dummyVector };
+    CHK_GXM(sceGxmPrecomputedDrawSetAllVertexStreams(&precomputed, streams));
+    sceGxmPrecomputedDrawSetParams(&precomputed, primTypeTable[primType], SCE_GXM_INDEX_FORMAT_U16, indices, indexCount);
+
     nStrips = 0;
     strips = NULL;
 
@@ -627,6 +639,7 @@ gxmPrimBuffer::~gxmPrimBuffer()
     radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), buffer);
     if(indices)
         radMemorySpaceFree(radMemorySpace_User, radMemoryGetCurrentAllocator(), indices);
+    radMemorySpaceFreeAligned(radMemorySpace_User, radMemoryGetCurrentAllocator(), state);
 
     context->ADD_STAT(PDDI_STAT_BUFFERED_COUNT, -1);
     context->ADD_STAT(PDDI_STAT_BUFFERED_ALLOC, -mem / 1024.0f);
@@ -680,8 +693,7 @@ void gxmPrimBuffer::Display(void)
         valid = true;
     }
 
-    CHK_GXM(sceGxmSetVertexStream(context->context, 0, buffer));
-    CHK_GXM(sceGxmDraw(context->context, primTypeTable[primType], SCE_GXM_INDEX_FORMAT_U16, indices, indexCount));
+    CHK_GXM(sceGxmDrawPrecomputed(context->context, &precomputed));
 }
 
 /*
@@ -704,7 +716,7 @@ void gxmContext::DrawPrimBuffer(pddiShader* mat, pddiPrimBuffer* buffer)
 
     pddiBaseShader* material = (pddiBaseShader*)mat;
     ADD_STAT(PDDI_STAT_MATERIAL_OPS, !material->IsCurrent());
-    SetVertexShader(((gxmPrimBuffer*)buffer)->GetVertexFormat(), ((gxmPrimBuffer*)buffer)->GetStride());
+    SetVertexShader(((gxmPrimBuffer*)buffer)->GetVertexShader());
     material->SetMaterial();
 
     ((gxmPrimBuffer*)buffer)->Display();
@@ -942,9 +954,8 @@ float gxmContext::EndTiming(void)
     return display->EndTiming();
 }
 
-void gxmContext::SetVertexShader(unsigned int vertexType, uint16_t stride)
+void gxmContext::SetVertexShader(SceGxmVertexProgram* vert)
 {
-    SceGxmVertexProgram* vert = vertexProgram->PatchVertexShader(vertexType, stride);
     if(vert != vertexShader)
     {
         vertexShader = vert;
