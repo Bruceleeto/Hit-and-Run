@@ -984,7 +984,6 @@ gxmProgram* gxmContext::GetFragmentProgram(const gxmTextureEnv* texEnv)
 
 void gxmContext::SetTextureEnvironment(const gxmTextureEnv* texEnv, gxmProgram* fragProgram)
 {
-    CHK_GXM(sceGxmReserveFragmentDefaultUniformBuffer(context, &fragmentUniformBuffer));
     CHK_GXM(sceGxmReserveVertexDefaultUniformBuffer(context, &vertexUniformBuffer));
     for(int i = 0; i < PDDI_MAX_LIGHTS; i++)
         vertexProgram->SetLightState(vertexUniformBuffer, i, &state.lightingState->light[i], texEnv->lit, texEnv->shininess);
@@ -992,5 +991,9 @@ void gxmContext::SetTextureEnvironment(const gxmTextureEnv* texEnv, gxmProgram* 
     vertexProgram->SetModelViewMatrix(vertexUniformBuffer, state.matrixStack[PDDI_MATRIX_MODELVIEW]->Top());
     vertexProgram->SetProjectionMatrix(vertexUniformBuffer, &projection);
     vertexProgram->SetTextureEnvironment(vertexUniformBuffer, texEnv);
-    fragProgram->SetAlphaTest(fragmentUniformBuffer, texEnv);
+    if (texEnv->alphaTest)
+    {
+        CHK_GXM(sceGxmReserveFragmentDefaultUniformBuffer(context, &fragmentUniformBuffer));
+        fragProgram->SetAlphaTest(fragmentUniformBuffer, texEnv);
+    }
 }
