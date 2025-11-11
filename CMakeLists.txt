@@ -144,7 +144,7 @@ add_subdirectory(code)
 if(VITA)
 	## Create Vita files
 	if(SRR2_P3D_PDDI STREQUAL "GLES2" AND NOT SRR2_USE_VITAGL)
-		vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME} UNSAFE)
+		vita_create_self(${PROJECT_NAME}.self code/${PROJECT_NAME} UNSAFE)
 		# The FILE directive lets you add additional files to the VPK, the syntax is
 		# FILE src_path dst_path_in_vpk. In this case, we add the LiveArea paths.
 		vita_create_vpk(${SRR2_FILENAME}${SRR2_REGION}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
@@ -163,7 +163,7 @@ if(VITA)
 			module/libpvrPSP2_WSEGL.suprx module/libpvrPSP2_WSEGL.suprx
 		)
 	else()
-		vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})
+		vita_create_self(${PROJECT_NAME}.self code/${PROJECT_NAME})
 		# The FILE directive lets you add additional files to the VPK, the syntax is
 		# FILE src_path dst_path_in_vpk. In this case, we add the LiveArea paths.
 		vita_create_vpk(${SRR2_FILENAME}${SRR2_REGION}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
@@ -190,7 +190,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
 		AUTHOR "Radical Entertainment"
 		VERSION ${SRR2_VERSION}
 	)
-	nx_create_nro(${PROJECT_NAME}
+	nx_create_nro(code/${PROJECT_NAME}
 		OUTPUT ${SRR2_FILENAME}${SRR2_REGION}.nro
 		ICON ${PROJECT_NAME}.jpg
 		NACP ${PROJECT_NAME}.nacp
