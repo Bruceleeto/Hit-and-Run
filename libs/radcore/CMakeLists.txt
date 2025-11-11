@@ -73,7 +73,6 @@ set(RADCORE_SOURCES
 )
 
 if(SRR2_MICROPROFILE)
-	add_compile_definitions(MICROPROFILE_ENABLED)
 	list(APPEND RADCORE_SOURCES	"src/radprofiler/microprofile.cpp")
 endif()
 
