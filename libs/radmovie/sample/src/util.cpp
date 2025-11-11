@@ -57,13 +57,21 @@ void utilATGLibInit
 
     #ifdef RAD_WIN32
 
-    SDL_Init( SDL_INIT_EVERYTHING );
+    #if SDL_MAJOR_VERSION < 3
+    SDL_Init( SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER );
+    #else
+    SDL_Init( SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD );
+    #endif
 
     // Create a window
     const char appName[] = "FTech RadMovie Simple Movie Player";
 
     // Create an application window
+    #if SDL_MAJOR_VERSION < 3
     g_pWnd = SDL_CreateWindow( appName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL );
+    #else
+    g_pWnd = SDL_CreateWindow( appName, 640, 480, SDL_WINDOW_OPENGL );
+    #endif
 
     #endif // RAD_WIN32
 
@@ -240,7 +248,11 @@ void utilATGLibService( void )
         SDL_Event msg;
         while( SDL_PollEvent( &msg ) )
         {
+    #if SDL_MAJOR_VERSION < 3
             if( msg.type == SDL_QUIT )
+    #else
+            if( msg.type == SDL_EVENT_QUIT )
+    #endif
             {
                 g_Done = true;
                 break;
