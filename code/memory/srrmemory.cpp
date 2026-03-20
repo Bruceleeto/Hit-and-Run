@@ -27,6 +27,7 @@
 #include <p3d/utility.hpp>
 
 #include <string.h>
+#include <cstdlib>
 
 //========================================
 // Project Includes
