@@ -585,8 +585,6 @@ if(VITA)
 endif()
 if(SRR2_USE_BINK)
 	target_link_libraries(${PROJECT_NAME} bink)
-else()
-	target_link_libraries(${PROJECT_NAME} PkgConfig::FFmpeg)
 endif()
 
 option(SRR2_USE_PCH ON)

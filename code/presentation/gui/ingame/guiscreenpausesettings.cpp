@@ -122,7 +122,13 @@ MEMTRACK_PUSH_GROUP( "CGuiScreenPauseSettings" );
     //
     m_pMenu = new CGuiMenu( this, NUM_PAUSE_SETTINGS_MENU_ITEMS, GUI_TEXT_MENU, MENU_SFX_NONE );
     rAssert( m_pMenu != NULL );
-    
+
+    if( pPage == NULL )
+    {
+        MEMTRACK_POP_GROUP( "CGuiScreenPauseSettings" );
+        return;
+    }
+
     // Add menu items
     //
     char itemName[ 32 ];
@@ -130,15 +136,15 @@ MEMTRACK_PUSH_GROUP( "CGuiScreenPauseSettings" );
     for( int i = 0; i < NUM_PAUSE_SETTINGS_MENU_ITEMS; i++ )
     {
         Scrooby::Group* group = pPage->GetGroup( PAUSE_SETTINGS_MENU_ITEMS[ i ] );
-        rAssert( group != NULL );
+        if( group == NULL ) continue;
 
         Scrooby::Text* pText = group->GetText( PAUSE_SETTINGS_MENU_ITEMS[ i ] );
-        rAssert( pText != NULL );
+        if( pText == NULL ) continue;
         pText->SetTextMode( Scrooby::TEXT_WRAP );
 
         sprintf( itemName, "%s_Value", PAUSE_SETTINGS_MENU_ITEMS[ i ] );
         Scrooby::Text* pTextValue = group->GetText( itemName );
-        rAssert( pTextValue != NULL );
+        if( pTextValue == NULL ) continue;
         pTextValue->SetTextMode( Scrooby::TEXT_WRAP );
 
         sprintf( itemName, "%s_LArrow", PAUSE_SETTINGS_MENU_ITEMS[ i ] );

@@ -285,6 +285,7 @@ BEGIN_PROFILE("::FindClosestAnyRoad")
       for( int i=pTreeIter->rCurrent().mRoadSegmentElems.mUseSize-1; i>-1; i-- )
       {
          RoadSegment* segment = pTreeIter->rCurrent().mRoadSegmentElems[i];
+         if( segment == NULL ) continue;
 
          itCount++;
 

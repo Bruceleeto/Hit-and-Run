@@ -1198,6 +1198,325 @@ class radControllerSDL
 };
 
 //============================================================================
+// Component: radKeyboardInputPointSDL
+//
+// Maps an SDL keyboard scancode to a gamepad-style input point
+//============================================================================
+
+struct SDLKeyboardMapping
+{
+    const char * m_pType;
+    const char * m_pName;
+    SDL_Scancode m_Scancode;
+    float m_Value; // value when pressed (1.0 for buttons, 0.0/1.0 for axes)
+};
+
+static SDLKeyboardMapping g_KeyboardMappings[] =
+{
+    { g_Sdlipt[ 0 ], "DPadUp",       SDL_SCANCODE_UP,     1.0f },
+    { g_Sdlipt[ 0 ], "DPadDown",     SDL_SCANCODE_DOWN,   1.0f },
+    { g_Sdlipt[ 0 ], "DPadLeft",     SDL_SCANCODE_LEFT,   1.0f },
+    { g_Sdlipt[ 0 ], "DPadRight",    SDL_SCANCODE_RIGHT,  1.0f },
+    { g_Sdlipt[ 0 ], "Start",        SDL_SCANCODE_RETURN, 1.0f },
+    { g_Sdlipt[ 0 ], "Back",         SDL_SCANCODE_ESCAPE, 1.0f },
+    { g_Sdlipt[ 0 ], "LeftThumb",    SDL_SCANCODE_Q,      1.0f },
+    { g_Sdlipt[ 0 ], "RightThumb",   SDL_SCANCODE_E,      1.0f },
+    { g_Sdlipt[ 0 ], "A",            SDL_SCANCODE_SPACE,  1.0f },
+    { g_Sdlipt[ 0 ], "B",            SDL_SCANCODE_LSHIFT, 1.0f },
+    { g_Sdlipt[ 0 ], "X",            SDL_SCANCODE_X,      1.0f },
+    { g_Sdlipt[ 0 ], "Y",            SDL_SCANCODE_C,      1.0f },
+    { g_Sdlipt[ 0 ], "Black",        SDL_SCANCODE_Z,      1.0f },
+    { g_Sdlipt[ 0 ], "White",        SDL_SCANCODE_V,      1.0f },
+    { g_Sdlipt[ 1 ], "LeftTrigger",  SDL_SCANCODE_A,      1.0f },
+    { g_Sdlipt[ 1 ], "RightTrigger", SDL_SCANCODE_D,      1.0f },
+    // Keyboard axes: LeftStickX = A/D, LeftStickY = W/S (handled specially)
+    { g_Sdlipt[ 2 ], "LeftStickX",   SDL_SCANCODE_UNKNOWN, 0.5f },
+    { g_Sdlipt[ 3 ], "LeftStickY",   SDL_SCANCODE_UNKNOWN, 0.5f },
+    { g_Sdlipt[ 2 ], "RightStickX",  SDL_SCANCODE_UNKNOWN, 0.5f },
+    { g_Sdlipt[ 3 ], "RightStickY",  SDL_SCANCODE_UNKNOWN, 0.5f },
+};
+
+class radKeyboardInputPointSDL
+    :
+    public IRadControllerInputPointSDL,
+    public radRefCount
+{
+    public:
+
+    IMPLEMENT_REFCOUNTED( "radKeyboardInputPointSDL" )
+
+    virtual void iVirtualTimeReMapped( unsigned int virtualTime )
+    {
+        m_TimeInState = 0;
+        m_TimeOfStateChange = virtualTime;
+    }
+
+    float CalculateNewValue( void )
+    {
+#if SDL_MAJOR_VERSION < 3
+        const Uint8* state = SDL_GetKeyboardState( NULL );
+#else
+        const bool* state = SDL_GetKeyboardState( NULL );
+#endif
+
+        // Special handling for analog stick axes
+        if( strcmp( m_pName, "LeftStickX" ) == 0 )
+        {
+            float v = 0.5f;
+            if( state[ SDL_SCANCODE_A ] ) v -= 0.5f;
+            if( state[ SDL_SCANCODE_D ] ) v += 0.5f;
+            return v;
+        }
+        if( strcmp( m_pName, "LeftStickY" ) == 0 )
+        {
+            float v = 0.5f;
+            if( state[ SDL_SCANCODE_S ] ) v -= 0.5f;
+            if( state[ SDL_SCANCODE_W ] ) v += 0.5f;
+            return v;
+        }
+        if( strcmp( m_pName, "RightStickX" ) == 0 || strcmp( m_pName, "RightStickY" ) == 0 )
+        {
+            return 0.5f;
+        }
+
+        // For triggers mapped to keys, return 0 or 1
+        if( m_Scancode != SDL_SCANCODE_UNKNOWN )
+        {
+            return state[ m_Scancode ] ? m_PressedValue : 0.0f;
+        }
+
+        return 0.0f;
+    }
+
+    virtual void iVirtualTimeChanged( unsigned int virtualTime )
+    {
+        float newValue = CalculateNewValue( );
+
+        if( ( newValue != m_Value ) && ( fabsf( newValue - m_Value ) >= m_Tolerance ) )
+        {
+            m_Value = newValue;
+            m_TimeOfStateChange = virtualTime;
+            m_TimeInState = 0;
+
+            AddRef( );
+            IRadWeakCallbackWrapper * pIWcr;
+            m_xIOl_Callbacks->Reset( );
+            if((pIWcr = reinterpret_cast< IRadWeakCallbackWrapper * >( m_xIOl_Callbacks->GetNext( ) )))
+            {
+                IRadControllerInputPointCallback * pCallback = ( IRadControllerInputPointCallback* ) pIWcr->GetWeakInterface( );
+                unsigned int userData = reinterpret_cast< uintptr_t >( pIWcr->GetUserData( ) );
+                pCallback->OnControllerInputPointChange( userData, m_Value );
+            }
+            Release( );
+        }
+        else
+        {
+            m_TimeInState = virtualTime - m_TimeOfStateChange;
+        }
+    }
+
+    virtual void iInitialize( void )
+    {
+        m_Value = CalculateNewValue( );
+    }
+
+    virtual const char * GetName( void ) { return m_pName; }
+    virtual const char * GetType( void ) { return m_pType; }
+
+    virtual void SetTolerance( float percentage )
+    {
+        if( percentage < 0.0f ) percentage = 0.0f;
+        if( percentage > 1.0f ) percentage = 1.0f;
+        m_Tolerance = percentage;
+    }
+
+    virtual float GetTolerance( void ) { return m_Tolerance; }
+
+    virtual void RegisterControllerInputPointCallback( IRadControllerInputPointCallback * pCallback, unsigned int userData = 0 )
+    {
+        ref< IRadWeakCallbackWrapper > xIWcr;
+        radWeakCallbackWrapperCreate( &xIWcr, g_ControllerSystemAllocator );
+        xIWcr->SetWeakInterface( pCallback );
+        xIWcr->SetUserData( (void*)(uintptr_t) userData );
+        m_xIOl_Callbacks->AddObject( xIWcr );
+    }
+
+    virtual void UnRegisterControllerInputPointCallback( IRadControllerInputPointCallback * pCallback )
+    {
+        IRadWeakCallbackWrapper * pIWcr;
+        m_xIOl_Callbacks->Reset( );
+        if((pIWcr = reinterpret_cast< IRadWeakCallbackWrapper * >( m_xIOl_Callbacks->GetNext( ) )))
+        {
+            if( pIWcr->GetWeakInterface( ) == pCallback )
+            {
+                m_xIOl_Callbacks->RemoveObject( pIWcr );
+                return;
+            }
+        }
+    }
+
+    virtual float GetCurrentValue( unsigned int * pTime = NULL )
+    {
+        if( pTime != NULL ) *pTime = m_TimeInState;
+        return (( m_MaxRange - m_MinRange ) * m_Value ) + m_MinRange;
+    }
+
+    virtual void SetRange( float min, float max ) { m_MinRange = min; m_MaxRange = max; }
+    virtual void GetRange( float * pMin, float * pMax )
+    {
+        if( pMin ) *pMin = m_MinRange;
+        if( pMax ) *pMax = m_MaxRange;
+    }
+
+    radKeyboardInputPointSDL( const char * pType, const char * pName, SDL_Scancode sc, float pressedValue )
+        :
+        radRefCount( 0 ),
+        m_Value( 0.0f ),
+        m_MinRange( 0.0f ),
+        m_MaxRange( 1.0f ),
+        m_Tolerance( 0.0f ),
+        m_TimeInState( 0 ),
+        m_TimeOfStateChange( 0 ),
+        m_pType( pType ),
+        m_pName( pName ),
+        m_Scancode( sc ),
+        m_PressedValue( pressedValue )
+    {
+        ::radObjectListCreate( & m_xIOl_Callbacks, g_ControllerSystemAllocator );
+    }
+
+    ~radKeyboardInputPointSDL( void ) { }
+
+    float m_Value, m_MinRange, m_MaxRange, m_Tolerance, m_PressedValue;
+    unsigned int m_TimeInState, m_TimeOfStateChange;
+    const char * m_pType;
+    const char * m_pName;
+    SDL_Scancode m_Scancode;
+    ref< IRadObjectList > m_xIOl_Callbacks;
+};
+
+//============================================================================
+// Component: radKeyboardControllerSDL
+//
+// A keyboard that pretends to be a gamepad at Port0\Slot0
+//============================================================================
+
+class radKeyboardControllerSDL
+    :
+    public IRadControllerSDL,
+    public radRefCount
+{
+    public:
+
+    IMPLEMENT_REFCOUNTED( "radKeyboardControllerSDL" )
+
+    virtual void iPoll( unsigned int virtualTime ) { }
+
+    virtual void iVirtualTimeReMapped( unsigned int virtualTime )
+    {
+        m_xIOl_InputPoints->Reset( );
+        IRadControllerInputPointSDL * p;
+        while((p = reinterpret_cast< IRadControllerInputPointSDL * >( m_xIOl_InputPoints->GetNext( ) )))
+            p->iVirtualTimeReMapped( virtualTime );
+    }
+
+    virtual void iVirtualTimeChanged( unsigned int virtualTime )
+    {
+        if( GetRefCount( ) > 1 )
+        {
+            m_xIOl_InputPoints->Reset( );
+            IRadControllerInputPointSDL * p;
+            while((p = reinterpret_cast< IRadControllerInputPointSDL * >( m_xIOl_InputPoints->GetNext( ) )))
+                p->iVirtualTimeChanged( virtualTime );
+        }
+    }
+
+    virtual void iSetBufferTime( unsigned int milliseconds, unsigned int pollingRate ) { }
+    virtual bool IsConnected( void ) { return true; }
+    virtual const char * GetType( void ) { return "Keyboard"; }
+    virtual const char * GetClassification( void ) { return "Keyboard"; }
+
+    virtual unsigned int GetNumberOfInputPointsOfType( const char * pType )
+    {
+        unsigned int count = 0;
+        m_xIOl_InputPoints->Reset( );
+        IRadControllerInputPoint * p;
+        while((p = reinterpret_cast< IRadControllerInputPoint * >( m_xIOl_InputPoints->GetNext( ) )))
+            if( strcmp( p->GetType( ), pType ) == 0 ) count++;
+        return count;
+    }
+
+    virtual unsigned int GetNumberOfOutputPointsOfType( const char * pType ) { return 0; }
+
+    virtual IRadControllerInputPoint * GetInputPointByTypeAndIndex( const char * pType, unsigned int index )
+    {
+        unsigned int count = 0;
+        m_xIOl_InputPoints->Reset( );
+        IRadControllerInputPoint * p;
+        while((p = reinterpret_cast< IRadControllerInputPoint * >( m_xIOl_InputPoints->GetNext( ) )))
+        {
+            if( strcmp( p->GetType( ), pType ) == 0 )
+            {
+                if( count == index ) return p;
+                count++;
+            }
+        }
+        return NULL;
+    }
+
+    virtual IRadControllerOutputPoint * GetOutputPointByTypeAndIndex( const char * pType, unsigned int index ) { return NULL; }
+
+    virtual IRadControllerInputPoint * GetInputPointByName( const char * pName )
+    {
+        m_xIOl_InputPoints->Reset( );
+        IRadControllerInputPoint * p;
+        while((p = reinterpret_cast< IRadControllerInputPoint * >( m_xIOl_InputPoints->GetNext( ) )))
+            if( strcmp( pName, p->GetName( ) ) == 0 ) return p;
+        return NULL;
+    }
+
+    virtual IRadControllerOutputPoint * GetOutputPointByName( const char * pName ) { return NULL; }
+    virtual const char * GetLocation( void ) { return m_xIString_Location->GetChars( ); }
+    virtual unsigned int GetNumberOfInputPoints( void ) { return m_xIOl_InputPoints->GetSize( ); }
+    virtual IRadControllerInputPoint * GetInputPointByIndex( unsigned int index )
+    {
+        return reinterpret_cast< IRadControllerInputPoint * >( m_xIOl_InputPoints->GetAt( index ) );
+    }
+    virtual unsigned int GetNumberOfOutputPoints( void ) { return 0; }
+    virtual IRadControllerOutputPoint * GetOutputPointByIndex( unsigned int index ) { return NULL; }
+
+    radKeyboardControllerSDL( unsigned int thisAllocator, unsigned int virtualTime, unsigned int bufferTime, unsigned int pollingRate )
+        :
+        radRefCount( 0 )
+    {
+        ::radObjectListCreate( & m_xIOl_InputPoints, g_ControllerSystemAllocator );
+        ::radStringCreate( & m_xIString_Location, g_ControllerSystemAllocator );
+        m_xIString_Location->SetSize( 12 );
+        m_xIString_Location->Append( "Port0\\Slot0" );
+
+        for( unsigned int i = 0; i < ( sizeof( g_KeyboardMappings ) / sizeof( SDLKeyboardMapping ) ); i++ )
+        {
+            ref< radKeyboardInputPointSDL > pIP = new( g_ControllerSystemAllocator ) radKeyboardInputPointSDL(
+                g_KeyboardMappings[i].m_pType,
+                g_KeyboardMappings[i].m_pName,
+                g_KeyboardMappings[i].m_Scancode,
+                g_KeyboardMappings[i].m_Value
+            );
+            m_xIOl_InputPoints->AddObject( pIP );
+            pIP->iInitialize( );
+        }
+
+        iSetBufferTime( bufferTime, pollingRate );
+        iVirtualTimeReMapped( virtualTime );
+    }
+
+    ~radKeyboardControllerSDL( void ) { }
+
+    ref< IRadObjectList > m_xIOl_InputPoints;
+    ref< IRadString > m_xIString_Location;
+};
+
+//============================================================================
 // Component: radControllerSystemSDL
 //============================================================================
 
@@ -1727,8 +2046,32 @@ class radControllerSystemSDL
 #endif
 
         //
+        // Always create a keyboard controller at Port0\Slot0 if no gamepad
+        // claimed that slot
+        //
+        if( GetControllerAtLocation( "Port0\\Slot0" ) == NULL )
+        {
+            unsigned int virtualTime = radTimeGetMilliseconds() + m_VirtualTimeAdjust;
+            unsigned int pollingRate = 10;
+            if( m_xITimer != NULL )
+                pollingRate = m_xITimer->GetTimeout();
+
+            ref< IRadController > xKeyboard = new ( g_ControllerSystemAllocator ) radKeyboardControllerSDL(
+                g_ControllerSystemAllocator, virtualTime, m_EventBufferTime, pollingRate );
+            m_xIOl_Controllers->AddObject( xKeyboard );
+
+            IRadWeakInterfaceWrapper* pIWir;
+            m_xIOl_Callbacks->Reset();
+            while((pIWir = reinterpret_cast<IRadWeakInterfaceWrapper*>(m_xIOl_Callbacks->GetNext())))
+            {
+                IRadControllerConnectionChangeCallback* pCallback = (IRadControllerConnectionChangeCallback*)pIWir->GetWeakInterface();
+                pCallback->OnControllerConnectionStatusChange( xKeyboard );
+            }
+        }
+
+        //
         // Set everything to know state
-        //        
+        //
         SetCaptureRate( 10 );
         MapVirtualTime( 0, 0 );
         SetBufferTime( 0 );

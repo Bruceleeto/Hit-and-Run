@@ -59,13 +59,7 @@ throw( std::bad_alloc )
 //
 // Override built-in delete.
 //
-void  operator delete(void* pMemory)
-#ifdef RAD_PS2
-#ifndef RAD_MW
-throw()
-#endif
-#endif
-;
+void  operator delete(void* pMemory) noexcept;
 
 //
 // Override built-in array new.
@@ -81,12 +75,7 @@ throw( std::bad_alloc )
 //
 // Override built-in array delete.
 //
-void  operator delete[]( void* pMemory )
-#ifdef RAD_PS2
-#ifndef RAD_MW
-throw()
-#endif
-#endif
+void  operator delete[]( void* pMemory ) noexcept
 ;
 
 #ifdef RAD_PS2

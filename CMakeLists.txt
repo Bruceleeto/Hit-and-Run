@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 3.6.3...3.10)
 
-project(SRR2)
+project(SRR2 C CXX)
+
+if(NOT VITA)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -O2 -g -fno-strict-aliasing -fwrapv -fno-delete-null-pointer-checks")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -O2 -g -fno-strict-aliasing -fwrapv -fno-delete-null-pointer-checks")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m32 -Wl,--allow-shlib-undefined")
+	set(CMAKE_FIND_LIBRARY_CUSTOM_LIB_SUFFIX 32)
+	set(CMAKE_LIBRARY_PATH /usr/lib /usr/local/lib)
+	set(CMAKE_FIND_ROOT_PATH /usr/lib /usr/local/lib)
+	set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB32_PATHS TRUE)
+	set(ENV{PKG_CONFIG_LIBDIR} "/usr/lib/pkgconfig")
+	set(ENV{PKG_CONFIG_PATH} "")
+endif()
 
 set(SRR2_TITLE "Simpsons Hit & Run")
 set(SRR2_VERSION "00.61")
@@ -11,7 +23,7 @@ set_property(CACHE SRR2_REGION PROPERTY STRINGS "NTSC" "PAL")
 option(SRR2_USE_DLMALLOC "Use Doug Lea's memory allocator for fixed-size heaps" OFF)
 option(SRR2_REROUTE_ALL_HEAP_ALLOCATIONS "Reroute all memory allocations by new operator to internal heaps" OFF)
 option(SRR2_USE_BINK "Use RAD Game Tools Bink SDK instead of FFmpeg" OFF)
-option(SRR2_BUILD_TESTS "Build sample programs for internal libraries" ON)
+option(SRR2_BUILD_TESTS "Build sample programs for internal libraries" OFF)
 option(SRR2_MICROPROFILE "Use microprofile instead of the internal profiler" OFF)
 option(SRR2_P3D_CG "Use CG shaders rather than GLSL for OpenGL ES" OFF)
 set(SRR2_P3D_PDDI "OpenGL" CACHE STRING "Pure3D PDDI implementation")
@@ -42,13 +54,6 @@ if(CCACHE_FOUND)
 endif()
 
 if(NOT VITA)
-	find_package(SDL3)
-endif()
-if(SDL3_FOUND)
-	get_target_property(SDL_INCLUDE_DIR SDL3::Headers INTERFACE_INCLUDE_DIRECTORIES)
-	include_directories(${SDL_INCLUDE_DIR}/SDL3)
-	set(SDL_LIBRARY SDL3::SDL3)
-else()
 	find_package(SDL2 REQUIRED)
 	set(SDL_LIBRARY SDL2::SDL2 SDL2::SDL2main)
 endif()
@@ -96,15 +101,6 @@ if(SRR2_REROUTE_ALL_HEAP_ALLOCATIONS)
 endif()
 if(SRR2_USE_BINK)
 	add_definitions(-DRAD_MOVIEPLAYER_USE_BINK)
-else()
-	find_package(PkgConfig REQUIRED)
-	pkg_check_modules(FFmpeg REQUIRED IMPORTED_TARGET
-			libavformat
-			libavcodec
-			libavutil
-			libswresample
-			libswscale
-	)
 endif()
 if(SRR2_MICROPROFILE)
 	add_definitions(-DMICROPROFILE_ENABLED)
