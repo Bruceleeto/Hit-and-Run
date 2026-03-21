@@ -26,7 +26,6 @@
 #include <radobjectlist.hpp>
 #include <radstring.hpp>
 #include <raddebug.hpp>
-#include <SDL.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -408,7 +407,7 @@ void rDebuggerString_Implementation( const char* string )
 		
     #else
 
-    SDL_Log( "%s", string );
+    fputs( string, stderr );
 
     #endif
 }

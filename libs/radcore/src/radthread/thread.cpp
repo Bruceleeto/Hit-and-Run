@@ -30,7 +30,9 @@
 #include "system.hpp"
 #include "thread.hpp"
 
-#include <SDL.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sched.h>
 
 //=============================================================================
 // Local Definitions
@@ -43,7 +45,7 @@
 //
 // This memory is used for the thread object that exists. We do not want to new
 // up memory as this will require the memory system to be initialized.
-// 
+//
 static unsigned int s_theThreadMemory[ ((sizeof( radThread)) / sizeof(unsigned int)) + 1 ];
 
 //
@@ -51,14 +53,6 @@ static unsigned int s_theThreadMemory[ ((sizeof( radThread)) / sizeof(unsigned i
 // are no reference counted.
 //
 radThread* radThread::s_ThreadTable[ MAX_RADTHREADS ];
-
-//
-// The following table are provided to map our priorities to OS specific 
-// priorities.
-//
-static SDL_ThreadPriority s_PriorityMap[ radThread::PriorityHigh + 1 ] =
-        { SDL_THREAD_PRIORITY_LOW, SDL_THREAD_PRIORITY_LOW, SDL_THREAD_PRIORITY_NORMAL,
-          SDL_THREAD_PRIORITY_HIGH, SDL_THREAD_PRIORITY_HIGH };
 
 //
 // This static is used to manage free thread local storgage objects. The
@@ -138,7 +132,7 @@ void radThreadSleep
     unsigned int milliseconds
 )
 {
-    SDL_Delay( milliseconds );
+    usleep( (useconds_t)milliseconds * 1000 );
 }
 
 //=============================================================================
@@ -483,7 +477,7 @@ radThread::radThread( void )
 {
     radMemoryMonitorIdentifyAllocation( this, g_nameFTech, "radThread" );
 
-    m_ThreadId = SDL_ThreadID();
+    m_ThreadId = (unsigned long)pthread_self();
 
     //
     // Add ourself as the first entry in the thread table. No protection
@@ -562,16 +556,11 @@ radThread::radThread
     //
     m_Priority = priority;
 
-#if SDL_MAJOR_VERSION < 3
-    m_ThreadHandle = SDL_CreateThreadWithStackSize(InternalThreadEntry, /*name*/nullptr, stackSize * 1024, this);
-#else
-    SDL_PropertiesID props = SDL_CreateProperties();
-    SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*)InternalThreadEntry);
-    SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, (Sint64)(stackSize * 1024));
-    SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
-    m_ThreadHandle = SDL_CreateThreadWithProperties(props);
-    SDL_DestroyProperties(props);
-#endif
+    pthread_attr_t attr;
+    pthread_attr_init( &attr );
+    pthread_attr_setstacksize( &attr, stackSize * 1024 );
+    pthread_create( &m_ThreadHandle, &attr, InternalThreadEntryPosix, this );
+    pthread_attr_destroy( &attr );
 
     //
     // Release our protection.
@@ -721,26 +710,17 @@ int radThread::InternalThreadEntry( void* param )
     // from callers function.   
     //
     radThread* pThread = (radThread*) param;
-    pThread->m_ThreadId = SDL_ThreadID();
-
-    // In SDL, thread priority can only be set on the current thread, so we do it here.
+    pThread->m_ThreadId = (unsigned long)pthread_self();
     pThread->SetPriority(pThread->m_Priority);
-
-    //
-    // Under windows, convert this thread to a fiber.
-    //
-#if defined(RAD_WIN32) || defined(RAD_XBOX)
-    //pThread->m_Fiber.m_Win32Fiber = ConvertThreadToFiber( NULL );
-#endif
-
     pThread->m_ReturnCode = (pThread->m_EntryFunction)(pThread->m_UserData );
-
-    //
-    // Here we consider the thread no longer running.
-    //
     pThread->m_IsRunning = false;
-
     return 0;
+}
+
+void* radThread::InternalThreadEntryPosix( void* param )
+{
+    InternalThreadEntry( param );
+    return NULL;
 }
 
 //=============================================================================
@@ -763,11 +743,9 @@ void radThread::SetPriority( Priority priority )
     //
     m_Priority = priority;
 
-#if SDL_MAJOR_VERSION < 3
-    SDL_SetThreadPriority( s_PriorityMap[ priority ] );
-#else
-    SDL_SetCurrentThreadPriority( s_PriorityMap[ priority ] );
-#endif
+    // Thread priority setting is best-effort on POSIX — may require elevated privileges.
+    // We don't fail if it doesn't work.
+    (void)priority;
 }
 
 //=============================================================================
@@ -873,9 +851,8 @@ bool radThread::IsRunning
 
 unsigned int radThread::WaitForTermination( void )
 {
-    int ret;
-    SDL_WaitThread(m_ThreadHandle, &ret);
-    return ret;
+    pthread_join( m_ThreadHandle, NULL );
+    return m_ReturnCode;
 }
 
 //=============================================================================
@@ -893,7 +870,7 @@ unsigned int radThread::WaitForTermination( void )
 
 bool radThread::IsActive( void )
 {
-    return m_ThreadId == SDL_ThreadID();
+    return m_ThreadId == (unsigned long)pthread_self();
 }
 
 //=============================================================================

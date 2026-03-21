@@ -34,7 +34,7 @@
 // Forward Class Declarations
 //=============================================================================
 
-struct SDL_Mutex;
+#include <pthread.h>
 
 //=============================================================================
 // Class Declarations
@@ -106,7 +106,7 @@ class radDispatcher : public IRadDispatcher,
     unsigned int        m_EventQueueTailIndex;
     unsigned int        m_EventsQueued;
 
-    SDL_Mutex*          m_Mutex;
+    pthread_mutex_t     m_Mutex;
 };
 
 #endif

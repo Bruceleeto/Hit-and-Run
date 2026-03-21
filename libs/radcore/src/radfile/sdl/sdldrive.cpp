@@ -235,7 +235,7 @@ radDrive::CompletionStatus radSdlDrive::ReadFile
         size_t result = fread( pData, 1, bytesToRead, fp );
         if ( result > 0 )
         {
-            *bytesRead = (unsigned int)result;
+            *bytesRead = bytesToRead;
             m_LastError = Success;
             return Complete;
         }
@@ -472,7 +472,7 @@ void radSdlDrive::SetMediaInfo( void )
 
     strcpy( m_MediaInfo.m_VolumeName, realDriveName );
 
-    m_MediaInfo.m_SectorSize = SDL_DEFAULT_SECTOR_SIZE;
+    m_MediaInfo.m_SectorSize = RAD_DEFAULT_SECTOR_SIZE;
     m_MediaInfo.m_MediaState = IRadDrive::MediaInfo::MediaPresent;
     m_MediaInfo.m_FreeSpace = UINT_MAX;
     m_MediaInfo.m_FreeFiles = m_MediaInfo.m_FreeSpace / m_MediaInfo.m_SectorSize;

@@ -32,7 +32,7 @@
 // Forward Class Declarations
 //=============================================================================
 
-struct SDL_Thread;
+#include <pthread.h>
 
 //=============================================================================
 // Defintions
@@ -224,6 +224,7 @@ class radThread : public IRadThread,
     // These statics are the actual thread OS specific entry points.
     // 
     static int InternalThreadEntry( void* param );
+    static void* InternalThreadEntryPosix( void* param );
 
     //
     // This member maintains the reference count of this object.
@@ -257,8 +258,8 @@ class radThread : public IRadThread,
     //
     // Platform specific information used to manage the thread.
     //
+    pthread_t       m_ThreadHandle;
     unsigned long   m_ThreadId;
-    SDL_Thread*     m_ThreadHandle;
 
     //
     // Here we maintain the actual values used  by the thread local

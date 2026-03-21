@@ -20,7 +20,7 @@
 //============================================================================
 
 #include "pch.hpp"
-#include <SDL.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -402,19 +402,12 @@ class radString
     {
         if ( IsNull( ) == false )
         {
-            #ifdef RAD_GAMECUBE
-            // 
-            // Gamecube has no to lower function. Do it ourself.
-            //
             char* str = m_pBuffer;
             while( *str != '\0' )
             {
-                *str = (char) tolower( *str );
+                *str = (char) tolower( (unsigned char)*str );
                 str++;
             }
-            #else
-                SDL_strlwr( m_pBuffer );
-            #endif
         }
     }
 
@@ -422,19 +415,12 @@ class radString
     {
         if( IsNull( ) == false )
         {
-            #ifdef RAD_GAMECUBE
-            // 
-            // Gamecube has no to upper function. Do it ourself.
-            //
             char* str = m_pBuffer;
             while( *str != '\0' )
             {
-                *str = (char) toupper( *str );
+                *str = (char) toupper( (unsigned char)*str );
                 str++;
             }
-            #else
-                SDL_strupr( m_pBuffer );
-            #endif
         }
     }
 
