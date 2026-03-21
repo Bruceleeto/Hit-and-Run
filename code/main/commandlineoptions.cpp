@@ -341,8 +341,10 @@ void CommandLineOptions::HandleOption( const char* const optionIn )
     }
     else if ( strcmp( strupr( option ), "RADTUNER" ) == 0 )
     {
+#ifndef RAD_NO_AUDIO
         extern bool gTuneSound;
         gTuneSound = true;
+#endif
         optionFound = false;
     }
 

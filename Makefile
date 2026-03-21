@@ -3,7 +3,11 @@
 #
 # Usage:
 #   make -j$(nproc)
+#   make AUDIO=0 -j$(nproc)   # build without OpenAL audio
 #   make clean
+
+# Set to 0 to build without OpenAL audio support
+AUDIO ?= 1
 
 ROOT     := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BUILDDIR := $(ROOT)build-mk
@@ -28,10 +32,19 @@ SDL2_CFLAGS  := $(shell $(PKG_CONFIG) --cflags sdl2)
 SDL2_LIBS    := $(shell $(PKG_CONFIG) --libs sdl2)
 PNG_CFLAGS   := $(shell $(PKG_CONFIG) --cflags libpng)
 PNG_LIBS     := $(shell $(PKG_CONFIG) --libs libpng)
+
+ifeq ($(AUDIO),1)
 OPENAL_CFLAGS := $(shell $(PKG_CONFIG) --cflags openal 2>/dev/null || echo -I/usr/include/AL) -include al.h -include alc.h -include efx.h
 OPENAL_LIBS   := $(shell $(PKG_CONFIG) --libs openal 2>/dev/null || echo -lopenal)
+else
+OPENAL_CFLAGS :=
+OPENAL_LIBS   :=
+CFLAGS_COMMON += -DRAD_NO_AUDIO
+CXXFLAGS := $(CFLAGS_COMMON) -std=gnu++17
+CFLAGS   := $(CFLAGS_COMMON) -std=gnu11
+endif
 
-LIBS := $(OPENAL_LIBS) $(SDL2_LIBS) $(PNG_LIBS) -lpthread -ldl
+LIBS := $(OPENAL_LIBS) $(SDL2_LIBS) $(PNG_LIBS) -lpthread
 
 I_RADCORE    := -I$(ROOT)libs/radcore/inc -I$(ROOT)libs/radcore/src/pch -I$(ROOT)code
 I_RADMATH    := -I$(ROOT)libs/radmath
@@ -272,6 +285,7 @@ RADSCRIPT_SRC := \
 	libs/radscript/src/typeinfoutil/typeinfoutil.cpp \
 	libs/radscript/src/typeinfo/win32/win32typeinfovfcall.cpp
 
+ifeq ($(AUDIO),1)
 RADSOUND_SRC := \
 	libs/radsound/src/common/radsoundobject.cpp \
 	libs/radsound/src/common/radsoundupdatableobject.cpp \
@@ -327,6 +341,11 @@ RADMOVIE_SRC := \
 	libs/radmovie/src/common/ffmpegmovieplayer.cpp \
 	libs/radmovie/src/common/binkrenderstrategy.cpp \
 	libs/radmovie/src/pch/pch.cpp
+else
+RADSOUND_SRC :=
+RADMUSIC_SRC :=
+RADMOVIE_SRC :=
+endif
 
 POSER_SRC := \
 	libs/poser/src/joint.cpp \
@@ -446,6 +465,67 @@ CHOREO_SRC := \
 	libs/choreo/src/synchronization.cpp \
 	libs/choreo/src/transition.cpp \
 	libs/choreo/src/utility.cpp
+
+ifeq ($(AUDIO),1)
+SRR2_SOUND_SRC := \
+	code/sound/avatar/avatarsoundplayer.cpp code/sound/avatar/carsoundparameters.cpp \
+	code/sound/avatar/soundavatar.cpp code/sound/avatar/vehiclesounddebugpage.cpp \
+	code/sound/avatar/vehiclesoundplayer.cpp \
+	code/sound/dialog/conversation.cpp code/sound/dialog/conversationmatcher.cpp \
+	code/sound/dialog/dialogcoordinator.cpp code/sound/dialog/dialogline.cpp \
+	code/sound/dialog/dialoglist.cpp code/sound/dialog/dialogpriorityqueue.cpp \
+	code/sound/dialog/dialogqueueelement.cpp \
+	code/sound/dialog/dialogselectiongroup.cpp \
+	code/sound/dialog/dialogsounddebugpage.cpp \
+	code/sound/dialog/playabledialog.cpp code/sound/dialog/selectabledialog.cpp \
+	code/sound/listener.cpp \
+	code/sound/movingpositional/actorplayer.cpp \
+	code/sound/movingpositional/aivehiclesoundplayer.cpp \
+	code/sound/movingpositional/animobjsoundplayer.cpp \
+	code/sound/movingpositional/avatarvehicleposnplayer.cpp \
+	code/sound/movingpositional/movingsoundmanager.cpp \
+	code/sound/movingpositional/platformsoundplayer.cpp \
+	code/sound/movingpositional/trafficsoundplayer.cpp \
+	code/sound/movingpositional/vehicleposnsoundplayer.cpp \
+	code/sound/movingpositional/waspsoundplayer.cpp \
+	code/sound/music/musicplayer.cpp code/sound/nis/nissoundplayer.cpp \
+	code/sound/positionalsoundplayer.cpp code/sound/simpsonssoundplayer.cpp \
+	code/sound/soundcluster.cpp code/sound/sounddebug/sounddebugdisplay.cpp \
+	code/sound/sounddebug/sounddebugpage.cpp \
+	code/sound/soundfx/positionalsoundsettings.cpp \
+	code/sound/soundfx/reverbcontroller.cpp code/sound/soundfx/reverbsettings.cpp \
+	code/sound/soundfx/soundeffectplayer.cpp \
+	code/sound/soundfx/soundfxfrontendlogic.cpp \
+	code/sound/soundfx/soundfxgameplaylogic.cpp \
+	code/sound/soundfx/soundfxlogic.cpp code/sound/soundfx/soundfxpauselogic.cpp \
+	code/sound/soundfx/win32reverbcontroller.cpp \
+	code/sound/soundloader.cpp code/sound/soundmanager.cpp \
+	code/sound/soundrenderercallback.cpp \
+	code/sound/soundrenderer/dasoundplayer.cpp code/sound/soundrenderer/fader.cpp \
+	code/sound/soundrenderer/musicsoundplayer.cpp \
+	code/sound/soundrenderer/playermanager.cpp \
+	code/sound/soundrenderer/scripts/apu.cpp code/sound/soundrenderer/scripts/bart.cpp \
+	code/sound/soundrenderer/scripts/cars.cpp \
+	code/sound/soundrenderer/scripts/effects.cpp \
+	code/sound/soundrenderer/scripts/english.cpp \
+	code/sound/soundrenderer/scripts/homer.cpp \
+	code/sound/soundrenderer/scripts/levels.cpp \
+	code/sound/soundrenderer/scripts/lisa.cpp \
+	code/sound/soundrenderer/scripts/marge.cpp \
+	code/sound/soundrenderer/scripts/tuning.cpp \
+	code/sound/soundrenderer/soundallocatedresource.cpp \
+	code/sound/soundrenderer/sounddynaload.cpp \
+	code/sound/soundrenderer/soundnucleus.cpp \
+	code/sound/soundrenderer/soundrenderingmanager.cpp \
+	code/sound/soundrenderer/soundresource.cpp \
+	code/sound/soundrenderer/soundresourcemanager.cpp \
+	code/sound/soundrenderer/soundtuner.cpp \
+	code/sound/soundrenderer/tunerdebugpage.cpp \
+	code/sound/soundrenderer/wireplayers.cpp \
+	code/sound/soundrenderer/wiresystem.cpp code/sound/tuning/globalsettings.cpp
+else
+SRR2_SOUND_SRC := code/sound/soundmanager_stub.cpp
+endif
 
 SRR2_SRC := \
 	code/ai/actionbuttonhandler.cpp code/ai/actionbuttonmanager.cpp \
@@ -714,61 +794,7 @@ SRR2_SRC := \
 	code/roads/road.cpp code/roads/roadmanager.cpp code/roads/roadrender.cpp \
 	code/roads/roadrendertest.cpp code/roads/roadsegment.cpp \
 	code/roads/roadsegmentdata.cpp code/roads/trafficcontrol.cpp \
-	code/sound/avatar/avatarsoundplayer.cpp code/sound/avatar/carsoundparameters.cpp \
-	code/sound/avatar/soundavatar.cpp code/sound/avatar/vehiclesounddebugpage.cpp \
-	code/sound/avatar/vehiclesoundplayer.cpp \
-	code/sound/dialog/conversation.cpp code/sound/dialog/conversationmatcher.cpp \
-	code/sound/dialog/dialogcoordinator.cpp code/sound/dialog/dialogline.cpp \
-	code/sound/dialog/dialoglist.cpp code/sound/dialog/dialogpriorityqueue.cpp \
-	code/sound/dialog/dialogqueueelement.cpp \
-	code/sound/dialog/dialogselectiongroup.cpp \
-	code/sound/dialog/dialogsounddebugpage.cpp \
-	code/sound/dialog/playabledialog.cpp code/sound/dialog/selectabledialog.cpp \
-	code/sound/listener.cpp \
-	code/sound/movingpositional/actorplayer.cpp \
-	code/sound/movingpositional/aivehiclesoundplayer.cpp \
-	code/sound/movingpositional/animobjsoundplayer.cpp \
-	code/sound/movingpositional/avatarvehicleposnplayer.cpp \
-	code/sound/movingpositional/movingsoundmanager.cpp \
-	code/sound/movingpositional/platformsoundplayer.cpp \
-	code/sound/movingpositional/trafficsoundplayer.cpp \
-	code/sound/movingpositional/vehicleposnsoundplayer.cpp \
-	code/sound/movingpositional/waspsoundplayer.cpp \
-	code/sound/music/musicplayer.cpp code/sound/nis/nissoundplayer.cpp \
-	code/sound/positionalsoundplayer.cpp code/sound/simpsonssoundplayer.cpp \
-	code/sound/soundcluster.cpp code/sound/sounddebug/sounddebugdisplay.cpp \
-	code/sound/sounddebug/sounddebugpage.cpp \
-	code/sound/soundfx/positionalsoundsettings.cpp \
-	code/sound/soundfx/reverbcontroller.cpp code/sound/soundfx/reverbsettings.cpp \
-	code/sound/soundfx/soundeffectplayer.cpp \
-	code/sound/soundfx/soundfxfrontendlogic.cpp \
-	code/sound/soundfx/soundfxgameplaylogic.cpp \
-	code/sound/soundfx/soundfxlogic.cpp code/sound/soundfx/soundfxpauselogic.cpp \
-	code/sound/soundfx/win32reverbcontroller.cpp \
-	code/sound/soundloader.cpp code/sound/soundmanager.cpp \
-	code/sound/soundrenderercallback.cpp \
-	code/sound/soundrenderer/dasoundplayer.cpp code/sound/soundrenderer/fader.cpp \
-	code/sound/soundrenderer/musicsoundplayer.cpp \
-	code/sound/soundrenderer/playermanager.cpp \
-	code/sound/soundrenderer/scripts/apu.cpp code/sound/soundrenderer/scripts/bart.cpp \
-	code/sound/soundrenderer/scripts/cars.cpp \
-	code/sound/soundrenderer/scripts/effects.cpp \
-	code/sound/soundrenderer/scripts/english.cpp \
-	code/sound/soundrenderer/scripts/homer.cpp \
-	code/sound/soundrenderer/scripts/levels.cpp \
-	code/sound/soundrenderer/scripts/lisa.cpp \
-	code/sound/soundrenderer/scripts/marge.cpp \
-	code/sound/soundrenderer/scripts/tuning.cpp \
-	code/sound/soundrenderer/soundallocatedresource.cpp \
-	code/sound/soundrenderer/sounddynaload.cpp \
-	code/sound/soundrenderer/soundnucleus.cpp \
-	code/sound/soundrenderer/soundrenderingmanager.cpp \
-	code/sound/soundrenderer/soundresource.cpp \
-	code/sound/soundrenderer/soundresourcemanager.cpp \
-	code/sound/soundrenderer/soundtuner.cpp \
-	code/sound/soundrenderer/tunerdebugpage.cpp \
-	code/sound/soundrenderer/wireplayers.cpp \
-	code/sound/soundrenderer/wiresystem.cpp code/sound/tuning/globalsettings.cpp \
+	$(SRR2_SOUND_SRC) \
 	code/stateprop/stateprop.cpp code/stateprop/statepropdata.cpp \
 	code/supersprint/supersprintdata.cpp code/supersprint/supersprintmanager.cpp \
 	code/worldsim/avatar.cpp code/worldsim/avatarmanager.cpp \
@@ -834,13 +860,20 @@ ALL_LIBS := \
 	$(BUILDDIR)/libp3d.a \
 	$(BUILDDIR)/libradcontent.a \
 	$(BUILDDIR)/libradscript.a \
-	$(BUILDDIR)/libradsound.a \
-	$(BUILDDIR)/libradmusic.a \
-	$(BUILDDIR)/libradmovie.a \
 	$(BUILDDIR)/libposer.a \
 	$(BUILDDIR)/libscrooby.a \
 	$(BUILDDIR)/libsim.a \
 	$(BUILDDIR)/libchoreo.a
+
+ifeq ($(AUDIO),1)
+ALL_LIBS += \
+	$(BUILDDIR)/libradsound.a \
+	$(BUILDDIR)/libradmusic.a \
+	$(BUILDDIR)/libradmovie.a
+AUDIO_LINK := -lradmovie -lradmusic -lradsound
+else
+AUDIO_LINK :=
+endif
 
 TARGET := $(BUILDDIR)/SRR2
 
@@ -855,8 +888,8 @@ all: $(TARGET)
 $(TARGET): $(SRR2_OBJ) $(ALL_LIBS)
 	$(CXX) $(LDFLAGS) -o $@ $(SRR2_OBJ) \
 		-L$(BUILDDIR) \
-		-lchoreo -lscrooby -lsim -lposer -lradmovie -lradmusic \
-		-lp3d -lpddi -lradcontent -lradsound -lradscript -lradcore -lradmath \
+		-lchoreo -lscrooby -lsim -lposer $(AUDIO_LINK) \
+		-lp3d -lpddi -lradcontent -lradscript -lradcore -lradmath \
 		$(LIBS)
 
 $(BUILDDIR)/libradmath.a: $(RADMATH_OBJ)
@@ -871,12 +904,14 @@ $(BUILDDIR)/libradcontent.a: $(RADCONTENT_OBJ)
 	$(AR) $@ $^
 $(BUILDDIR)/libradscript.a: $(RADSCRIPT_OBJ)
 	$(AR) $@ $^
+ifeq ($(AUDIO),1)
 $(BUILDDIR)/libradsound.a: $(RADSOUND_OBJ)
 	$(AR) $@ $^
 $(BUILDDIR)/libradmusic.a: $(RADMUSIC_OBJ)
 	$(AR) $@ $^
 $(BUILDDIR)/libradmovie.a: $(RADMOVIE_OBJ)
 	$(AR) $@ $^
+endif
 $(BUILDDIR)/libposer.a: $(POSER_OBJ)
 	$(AR) $@ $^
 $(BUILDDIR)/libscrooby.a: $(SCROOBY_OBJ)

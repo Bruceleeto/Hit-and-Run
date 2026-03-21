@@ -35,7 +35,9 @@
 #include <p3d/view.hpp>
 
 #include <raddebug.hpp> // Foundation
+#ifndef RAD_NO_AUDIO
 #include <radmovie2.hpp>
+#endif
 
 #include <sound/soundmanager.h>
 

@@ -16,9 +16,11 @@
 #include <raddebug.hpp>
 
 #include <radplatform.hpp>
+#ifndef RAD_NO_AUDIO
 #include <radsound.hpp>
-#include <raddebug.hpp>
 #include <radmovie2.hpp>
+#endif
+#include <raddebug.hpp>
 #include <radcontroller.hpp>
 #include <radfile.hpp>
 #include <radmemory.hpp>
@@ -55,6 +57,7 @@
 //
 //******************************************************************************
 
+#ifndef RAD_NO_AUDIO
 #define MOVIE_MAX_WIDTH 640
 #ifdef PAL
     #define MOVIE_MAX_HEIGHT 512
@@ -65,6 +68,7 @@
 #define MOVIE_PRIMARY_AUDIO_BUFFER_SIZE 2000
 #define MOVIE_SECONDARY_AUDIO_BUFFER_SIZE 1000
 #define MOVIE_AUDIO_BUFFER_SIZE_TYPE IRadSoundHalAudioFormat::Milliseconds
+#endif // !RAD_NO_AUDIO
 
 #ifdef RAD_XBOX
 static const float VOLUME_MULTIPLIER = 0.75f;
@@ -89,7 +93,9 @@ static const float VOLUME_MULTIPLIER = 1.0f;
 //
 //==============================================================================
 FMVPlayer::FMVPlayer() :
+#ifndef RAD_NO_AUDIO
     m_refIRadMoviePlayer( NULL ),
+#endif
     mElapsedTime( 0.0f ),
 	mFadeOut(-1.0f)
 {
@@ -112,11 +118,13 @@ FMVPlayer::~FMVPlayer()
     m_UserInputHandler->Release();
     m_UserInputHandler = NULL;
 
+#ifndef RAD_NO_AUDIO
     if( m_refIRadMoviePlayer != NULL )
     {
         m_refIRadMoviePlayer->Unload( );
         m_refIRadMoviePlayer = NULL;
     }
+#endif
 }
 
 //=============================================================================
@@ -129,8 +137,11 @@ FMVPlayer::~FMVPlayer()
 // Return:      void 
 //
 //=============================================================================
-void FMVPlayer::LoadData( const char* fileName, bool bInInventory, void* pUserData ) 
+void FMVPlayer::LoadData( const char* fileName, bool bInInventory, void* pUserData )
 {
+#ifdef RAD_NO_AUDIO
+    (void)fileName; (void)bInInventory; (void)pUserData;
+#else
     if( GetState() == ANIM_IDLE || GetState() == ANIM_LOADING )
     {
         GetSoundManager()->StopForMovie();
@@ -178,6 +189,7 @@ void FMVPlayer::LoadData( const char* fileName, bool bInInventory, void* pUserDa
         HeapMgr()->PopHeap(allocator);
         SetState( ANIM_LOADED );
     }
+#endif // !RAD_NO_AUDIO
 }
 
 //=============================================================================
@@ -192,6 +204,9 @@ void FMVPlayer::LoadData( const char* fileName, bool bInInventory, void* pUserDa
 //=============================================================================
 void FMVPlayer::Play()
 {
+#ifdef RAD_NO_AUDIO
+    // No FMV playback without audio
+#else
     if(( GetState() == ANIM_LOADED ) && ( m_refIRadMoviePlayer != NULL ))
     {
         AnimationPlayer::Play();
@@ -216,8 +231,9 @@ void FMVPlayer::Play()
 		}
 
 		m_refIRadMoviePlayer->SetVolume(mMovieVolume);
-        m_refIRadMoviePlayer->Play( ); 
+        m_refIRadMoviePlayer->Play( );
     }
+#endif // !RAD_NO_AUDIO
 }
 
 /*=============================================================================
@@ -243,7 +259,10 @@ void FMVPlayer::Abort(void)
 //
 //=============================================================================
 void FMVPlayer::Stop()
-{ 
+{
+#ifdef RAD_NO_AUDIO
+    AnimationPlayer::Stop();
+#else
 	// Force a clear screen.
 	FadeScreen(0.0f);
     p3d::context->SwapBuffers();
@@ -261,6 +280,7 @@ void FMVPlayer::Stop()
         ClearData();
     }
 	mFadeOut = -1.0f;
+#endif
 }
 
 //=============================================================================
@@ -275,7 +295,10 @@ void FMVPlayer::Stop()
 //=============================================================================
 #ifdef RAD_WIN32
 void FMVPlayer::ForceStop()
-{ 
+{
+#ifdef RAD_NO_AUDIO
+    AnimationPlayer::Stop();
+#else
     // Force a clear screen.
     if( this->IsPlaying() && m_refIRadMoviePlayer != NULL )
     {
@@ -289,6 +312,7 @@ void FMVPlayer::ForceStop()
 
         ClearData();
     }
+#endif // !RAD_NO_AUDIO
 }
 #endif
 
@@ -296,22 +320,26 @@ void FMVPlayer::ForceStop()
 // FMVPlayer::Pause
 //=============================================================================
 void FMVPlayer::Pause()
-{ 
+{
+#ifndef RAD_NO_AUDIO
     if( this->IsPlaying() && m_refIRadMoviePlayer != NULL )
     {
         m_refIRadMoviePlayer->Pause( );
     }
+#endif
 }
 
 //=============================================================================
 // FMVPlayer::UnPause
 //=============================================================================
 void FMVPlayer::UnPause()
-{ 
+{
+#ifndef RAD_NO_AUDIO
     if( this->IsPlaying() && m_refIRadMoviePlayer != NULL )
     {
         m_refIRadMoviePlayer->Play( );
     }
+#endif
 }
 
 
@@ -331,15 +359,16 @@ void FMVPlayer::UnPause()
 // Return:      void 
 //
 //=============================================================================
+#ifndef RAD_NO_AUDIO
 void FMVPlayer::Initialize( radMemoryAllocator Allocator )
 {
     //
-    // Initialize the movie player.  
+    // Initialize the movie player.
     //
     // This is where all the memory will be allocated.
     //
     ref< IRadMovieRenderLoop > refIRadMovieRenderLoop = this;
-    ref< IRadMovieRenderStrategy > refIRadMovieRenderStrategy = 
+    ref< IRadMovieRenderStrategy > refIRadMovieRenderStrategy =
         ::radMovieSimpleFullScreenRenderStrategyCreate( Allocator );
 
     // Note that there is a problem if we start creating multiple movie players
@@ -355,16 +384,17 @@ void FMVPlayer::Initialize( radMemoryAllocator Allocator )
         refIRadMovieRenderLoop,
         refIRadMovieRenderStrategy );
 #else // PS2
-        m_refIRadMoviePlayer->Initialize( 
+        m_refIRadMoviePlayer->Initialize(
         refIRadMovieRenderLoop,
         refIRadMovieRenderStrategy,
-        MOVIE_MAX_WIDTH, MOVIE_MAX_HEIGHT, 
-        MOVIE_ENCODED_VIDEO_BUFFER_SIZE, 
-        MOVIE_PRIMARY_AUDIO_BUFFER_SIZE, 
-        MOVIE_SECONDARY_AUDIO_BUFFER_SIZE, 
+        MOVIE_MAX_WIDTH, MOVIE_MAX_HEIGHT,
+        MOVIE_ENCODED_VIDEO_BUFFER_SIZE,
+        MOVIE_PRIMARY_AUDIO_BUFFER_SIZE,
+        MOVIE_SECONDARY_AUDIO_BUFFER_SIZE,
         MOVIE_AUDIO_BUFFER_SIZE_TYPE );
 #endif
 }
+#endif // !RAD_NO_AUDIO
 
 //=============================================================================
 // FMVPlayer::DoRender
@@ -378,6 +408,9 @@ void FMVPlayer::Initialize( radMemoryAllocator Allocator )
 //=============================================================================
 void FMVPlayer::DoRender()
 {
+#ifdef RAD_NO_AUDIO
+    Stop();
+#else
     IRadMoviePlayer2::State state = m_refIRadMoviePlayer->GetState( );
 
     mFrameReady = false;
@@ -386,7 +419,7 @@ void FMVPlayer::DoRender()
     {
 		::radMovieService2( );
         ::radSoundHalSystemGet( )->Service( );
-//        ::radSoundHalSystemGet( )->ServiceOncePerFrame( );      
+//        ::radSoundHalSystemGet( )->ServiceOncePerFrame( );
         ::radFileService( );
 
         state = m_refIRadMoviePlayer->GetState( );
@@ -405,8 +438,10 @@ void FMVPlayer::DoRender()
     {
         Stop();
     }
+#endif // !RAD_NO_AUDIO
 }
 
+#ifndef RAD_NO_AUDIO
 void FMVPlayer::IterateLoop( IRadMoviePlayer2* pIRadMoviePlayer )
 {
     rAssert( pIRadMoviePlayer != NULL );
@@ -426,6 +461,7 @@ void FMVPlayer::IterateLoop( IRadMoviePlayer2* pIRadMoviePlayer )
 	}
     mFrameReady = true;
 }
+#endif // !RAD_NO_AUDIO
 
 //=============================================================================
 // FMVPlayer::Finalize
@@ -439,6 +475,7 @@ void FMVPlayer::IterateLoop( IRadMoviePlayer2* pIRadMoviePlayer )
 //=============================================================================
 void FMVPlayer::ClearData()
 {
+#ifndef RAD_NO_AUDIO
     //
     // Free up the radmovie movie player stuff
     //
@@ -462,14 +499,17 @@ void FMVPlayer::ClearData()
             SoundManager::GetInstance()->UpdateOncePerFrame( 0, NUM_CONTEXTS, false );
         }
     }
+#endif // !RAD_NO_AUDIO
 
     AnimationPlayer::ClearData();
 }
 
+#ifndef RAD_NO_AUDIO
 void FMVPlayer::OnDriveOperationsComplete( void* pUserData )
 {
     mDriveFinished = true;
 }
+#endif // !RAD_NO_AUDIO
 
 void FMVPlayer::FadeScreen(float Alpha)
 {

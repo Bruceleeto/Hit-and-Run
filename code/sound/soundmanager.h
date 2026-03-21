@@ -13,35 +13,7 @@
 #ifndef _SOUNDMANAGER_H
 #define _SOUNDMANAGER_H
 
-#ifndef RAD_RELEASE
-#define SOUNDDEBUG_ENABLED
-#endif
-
-
-//
-// Debug display macros
-//
-#ifndef SOUNDDEBUG_ENABLED
-
-#define SOUNDDEBUG_RENDER()
-
-#else
-
-#define SOUNDDEBUG_RENDER()  GetSoundManager()->DebugRender()
-
-#endif
-
-//========================================
-// Nested Includes
-//========================================
-
 #include <Enums.h>
-
-#include <sound/soundloader.h>
-#include <sound/avatar/avatarsoundplayer.h>
-#include <sound/listener.h>
-#include <sound/nis/nissoundplayer.h>
-
 #include <data/gamedata.h>
 #include <events/eventlistener.h>
 #include <contexts/contextenum.h>
@@ -49,26 +21,6 @@
 #ifdef RAD_WIN32
 #include <data/config/gameconfig.h>
 #endif
-
-//========================================
-// Forward References
-//========================================
-
-class MusicPlayer;
-class DialogCoordinator;
-class SoundDebugDisplay;
-class MovingSoundManager;
-class Vehicle;
-class Character;
-class SoundEffectPlayer;
-struct IRadSoundClip;
-struct IRadSoundClipPlayer;
-
-//=============================================================================
-//
-// Synopsis:    NIS loading and playback completion callbacks
-//
-//=============================================================================
 
 struct NISSoundLoadedCallback
 {
@@ -87,6 +39,142 @@ enum SoundMode
     SOUND_SURROUND
 };
 
+class Vehicle;
+class Character;
+class SoundFileHandler;
+
+#ifdef RAD_NO_AUDIO
+
+// Stub SoundManager — all methods are no-ops when audio is disabled.
+
+#include <radkey.hpp>
+#include <radmath/radmath.hpp>
+namespace Scrooby { enum XLLanguage; }
+
+#define SOUNDDEBUG_RENDER()
+
+class SoundLoader;
+class SoundDebugDisplay;
+class DialogCoordinator;
+
+class SoundManager : public EventListener,
+                     #ifdef RAD_PC
+                     public GameConfigHandler,
+                     #endif
+                     public GameDataHandler
+{
+    public:
+        static SoundManager* CreateInstance( bool, bool, bool, bool )
+        {
+            if( !spInstance ) spInstance = new SoundManager();
+            return spInstance;
+        }
+        static SoundManager* GetInstance() { return spInstance; }
+        static void DestroyInstance() { delete spInstance; spInstance = 0; }
+        void Initialize() {}
+
+        void HandleEvent( EventEnum, void* ) {}
+        void LoadSoundFile( const char*, SoundFileHandler* ) {}
+        void Update() {}
+        void UpdateOncePerFrame( unsigned int, ContextEnum, bool = true, bool = false ) {}
+        void QueueLevelSoundLoads() {}
+        void LoadCarSound( Vehicle*, bool ) {}
+        void OnBootupStart() {}
+        void OnBootupComplete() {}
+        void OnFrontEndStart() {}
+        void OnFrontEndEnd() {}
+        void OnGameplayStart() {}
+        void OnGameplayEnd( bool ) {}
+        void OnPauseStart() {}
+        void OnPauseEnd() {}
+        void OnStoreScreenStart( bool = true ) {}
+        void OnStoreScreenEnd() {}
+        void DuckEverythingButMusicBegin( bool = false ) {}
+        void DuckEverythingButMusicEnd( bool = false ) {}
+        void OnMissionBriefingStart() {}
+        void OnMissionBriefingEnd() {}
+        void DuckForInGameCredits() {}
+        void StopForMovie() {}
+        void ResumeAfterMovie() {}
+        bool IsStoppedForMovie() { return true; }
+        void MuteNISPlayers() {}
+        void UnmuteNISPlayers() {}
+        void RestartSupersprintMusic() {}
+        void SetSoundMode( SoundMode ) {}
+        SoundMode GetSoundMode() { return SOUND_STEREO; }
+        float GetBeatValue() { return 0.0f; }
+        static bool IsFoodCharacter( Character* ) { return false; }
+        void SetMasterVolume( float ) {}
+        float GetMasterVolume() { return 0.0f; }
+        void SetSfxVolume( float ) {}
+        float GetSfxVolume() { return 0.0f; }
+        void SetCarVolume( float ) {}
+        float GetCarVolume() { return 0.0f; }
+        void SetMusicVolume( float ) {}
+        float GetMusicVolume() { return 0.0f; }
+        void SetAmbienceVolume( float ) {}
+        float GetAmbienceVolume() { return 0.0f; }
+        void SetDialogueVolume( float ) {}
+        float GetDialogueVolume() { return 1.0f; }
+        float GetCalculatedAmbienceVolume() { return 0.0f; }
+        void PlayCarOptionMenuStinger() {}
+        void PlayDialogueOptionMenuStinger() {}
+        void PlayMusicOptionMenuStinger() {}
+        void PlaySfxOptionMenuStinger() {}
+        void ResetDucking() {}
+        void LoadNISSound( radKey32, NISSoundLoadedCallback* = 0 ) {}
+        void PlayNISSound( radKey32, rmt::Box3D*, NISSoundPlaybackCompleteCallback* = 0 ) {}
+        void StopAndDumpNISSound( radKey32 ) {}
+        void SetDialogueLanguage( Scrooby::XLLanguage ) {}
+        void DebugRender() {}
+        SoundLoader* GetSoundLoader() { return 0; }
+        SoundDebugDisplay* GetDebugDisplay() { return 0; }
+        void SetMusicVolumeWithoutTuner( float ) {}
+        void SetAmbienceVolumeWithoutTuner( float ) {}
+        virtual void LoadData( const GameDataByte*, unsigned int ) {}
+        virtual void SaveData( GameDataByte*, unsigned int ) {}
+        virtual void ResetData() {}
+        #ifdef RAD_PC
+        virtual const char* GetConfigName() const { return "Sound"; }
+        virtual int GetNumProperties() const { return 0; }
+        virtual void LoadDefaults() {}
+        virtual void LoadConfig( ConfigString& ) {}
+        virtual void SaveConfig( ConfigString& ) {}
+        #endif
+
+        DialogCoordinator* m_dialogCoordinator;
+
+    private:
+        SoundManager() : m_dialogCoordinator( 0 ) {}
+        ~SoundManager() {}
+        static SoundManager* spInstance;
+};
+
+#else // !RAD_NO_AUDIO
+
+#ifndef RAD_RELEASE
+#define SOUNDDEBUG_ENABLED
+#endif
+
+#ifndef SOUNDDEBUG_ENABLED
+#define SOUNDDEBUG_RENDER()
+#else
+#define SOUNDDEBUG_RENDER()  GetSoundManager()->DebugRender()
+#endif
+
+#include <sound/soundloader.h>
+#include <sound/avatar/avatarsoundplayer.h>
+#include <sound/listener.h>
+#include <sound/nis/nissoundplayer.h>
+
+class MusicPlayer;
+class DialogCoordinator;
+class SoundDebugDisplay;
+class MovingSoundManager;
+class SoundEffectPlayer;
+struct IRadSoundClip;
+struct IRadSoundClipPlayer;
+
 //=============================================================================
 //
 // Synopsis:    SoundManager class declaration
@@ -103,7 +191,7 @@ class SoundManager : public EventListener,
         //
         // Singleton accessors
         //
-        static SoundManager* CreateInstance( bool muteSound, bool noMusic, 
+        static SoundManager* CreateInstance( bool muteSound, bool noMusic,
                                              bool noEffects, bool noDialogue );
         static SoundManager* GetInstance();
         static void DestroyInstance();
@@ -113,7 +201,7 @@ class SoundManager : public EventListener,
         // EventListener interface
         //
         void HandleEvent( EventEnum id, void* pEventData );
-        
+
         //
         // All-purpose sound file loading.  Coordinates the sound system
         // with the loading system
@@ -126,11 +214,11 @@ class SoundManager : public EventListener,
         void Update();
         // This one is for expensive stuff like positional sound calculations
         // that we can get away with doing once per frame
-        void UpdateOncePerFrame( unsigned int elapsedTime, 
-                                 ContextEnum context, 
+        void UpdateOncePerFrame( unsigned int elapsedTime,
+                                 ContextEnum context,
                                  bool useContext = true,
                                  bool isPausedForErrors = false );
-        
+
         // Prepare to load level sounds
         void QueueLevelSoundLoads();
 
@@ -144,7 +232,7 @@ class SoundManager : public EventListener,
         // Called when front end starts and ends
         void OnFrontEndStart();
         void OnFrontEndEnd();
-        
+
         // Called when gameplay starts and ends
         void OnGameplayStart();
         void OnGameplayEnd( bool goingToFE );
@@ -196,25 +284,25 @@ class SoundManager : public EventListener,
 
         // Special case dialog handling
         static bool IsFoodCharacter( Character* theGuy );
-        
+
         //
         // Volume controls.  Values range from 0.0f to 1.0f
         //
         void SetMasterVolume( float volume );
         float GetMasterVolume();
-        
+
         void SetSfxVolume( float volume );
         float GetSfxVolume();
 
         void SetCarVolume( float volume );
         float GetCarVolume();
-        
+
         void SetMusicVolume( float volume );
         float GetMusicVolume();
-        
+
         void SetAmbienceVolume( float volume );
         float GetAmbienceVolume();
-        
+
         void SetDialogueVolume( float volume );
         float GetDialogueVolume();
 
@@ -249,7 +337,7 @@ class SoundManager : public EventListener,
         // Sound debug functions
         //
         void DebugRender();
-        
+
         //
         // TODO: move these functions, they're not intended for use outside
         // of the sound system
@@ -282,7 +370,7 @@ class SoundManager : public EventListener,
         #endif
 
         DialogCoordinator* m_dialogCoordinator;
-        
+
     protected:
         //
         // Hide the SoundManager constructor and destructor so everyone
@@ -315,7 +403,7 @@ class SoundManager : public EventListener,
             float dialogVolume;
             bool isSurround;
         };
-        
+
         // Sound loading subsystem
         SoundLoader* m_soundLoader;
 
@@ -327,13 +415,13 @@ class SoundManager : public EventListener,
 
         // Sound effect subsystem
         SoundEffectPlayer* m_soundFXPlayer;
-        
+
         // Dialog subsystem
 
 
         // NIS subsystem
         NISSoundPlayer* m_NISPlayer;
-        
+
         // RadSound listener update
         Listener m_listener;
 
@@ -342,7 +430,7 @@ class SoundManager : public EventListener,
 
         // Sound debug display subsystem
         SoundDebugDisplay* m_debugDisplay;
-        
+
         // Mute options
         bool m_isMuted;
 
@@ -352,7 +440,7 @@ class SoundManager : public EventListener,
 
         // Pointer to sound rendering interface
         Sound::daSoundRenderingManager* m_pSoundRenderMgr;
-        
+
         // [ps] avoid hammering on pause.
         bool m_stoppedForMovie;
 
@@ -365,9 +453,11 @@ class SoundManager : public EventListener,
         IRadSoundClipPlayer* m_selectSoundClipPlayer;
         IRadSoundClipPlayer* m_scrollSoundClipPlayer;
 
-        
+
         SoundMode m_soundMode;
 };
+
+#endif // RAD_NO_AUDIO
 
 // A little syntactic sugar for getting at this singleton.
 inline SoundManager* GetSoundManager() { return( SoundManager::GetInstance() ); }

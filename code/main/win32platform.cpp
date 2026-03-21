@@ -80,7 +80,9 @@
 #include <raddebugcommunication.hpp>
 #include <raddebugwatch.hpp>
 #include <radfile.hpp>
+#ifndef RAD_NO_AUDIO
 #include <radmovie2.hpp>
+#endif
 
 //This is so we can get the name of the file that's failing.
 #include <../src/radfile/common/requests.hpp>
@@ -448,7 +450,9 @@ void Win32Platform::InitializeFoundation()
     //
     // Initialize the new movie player
     //
+#ifndef RAD_NO_AUDIO
     ::radMovieInitialize2( GMA_PERSISTENT );
+#endif
 
     HeapMgr()->PopHeap (GMA_PERSISTENT);
 }
@@ -1303,7 +1307,9 @@ void Win32Platform::ShutdownFoundation()
     //
     // Shutdown the systems in the reverse order.
     //
+#ifndef RAD_NO_AUDIO
     ::radMovieTerminate2();
+#endif
     ::radDriveUnmount( NULL );
     ::radLoadTerminate();
     ::radFileTerminate();

@@ -17,13 +17,18 @@
 //========================================
 
 #include <presentation/animplayer.h>
+#ifndef RAD_NO_AUDIO
 #include <radmovie2.hpp>
+#endif
 
 //========================================
 // Forward References
 //========================================
 
 class FMVUserInputHandler;
+#ifdef RAD_NO_AUDIO
+struct IRadMoviePlayer2;
+#endif
 
 //=============================================================================
 //
@@ -32,8 +37,10 @@ class FMVUserInputHandler;
 //=============================================================================
 
 class FMVPlayer : public AnimationPlayer,
+#ifndef RAD_NO_AUDIO
                   public IRadMovieRenderLoop,
                   public IRadDriveCompletionCallback,
+#endif
                   public radRefCount
 
 {
@@ -43,7 +50,7 @@ public:
 
     FMVPlayer();
     virtual ~FMVPlayer();
-    
+
     // playback control
     virtual void Play();
 	virtual void Abort(void);
@@ -62,8 +69,10 @@ public:
     // animation updating (doesn't need any)
     virtual void Update( unsigned int elapsedTime ) {};
 
+#ifndef RAD_NO_AUDIO
     // IRadMovieRenderLoop interface, called by radMovie service eac time a frame is ready
     void IterateLoop( IRadMoviePlayer2* pIRadMoviePlayer );
+#endif
 
     // reset all internal data
     virtual void ClearData();
@@ -77,15 +86,19 @@ public:
     }
 
 protected:
+#ifndef RAD_NO_AUDIO
     void Initialize( radMemoryAllocator Allocator );
+#endif
 
     // AnimationPlayer interface
-    virtual void DoLoaded() {}; // Movies aren't loader by main game loader, so don't need to handle this 
+    virtual void DoLoaded() {}; // Movies aren't loader by main game loader, so don't need to handle this
     virtual void DoRender(); // render a frame (if one is avilible)
 
+#ifndef RAD_NO_AUDIO
     // Implements IRadDriveCompletionCallback. We'll be called this when the movie finishes streaming.
     //We need to wait for the drive to finish so the internal memory in radmovie is freed.
     virtual void OnDriveOperationsComplete( void* pUserData );
+#endif
 	void FadeScreen(float Alpha);
 
 private:
@@ -94,7 +107,9 @@ private:
     FMVPlayer& operator=( const FMVPlayer& fmvPlayer );
 
     FMVUserInputHandler* m_UserInputHandler;
+#ifndef RAD_NO_AUDIO
     ref< IRadMoviePlayer2 > m_refIRadMoviePlayer;
+#endif
 
     bool mFrameReady;
     float mElapsedTime; // Elapsed playing time. So you know if you should let the player skip the movie.

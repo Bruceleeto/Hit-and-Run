@@ -84,11 +84,16 @@ void SoundFileHandler::LoadFile( const char* filename,
     mpCallback = pCallback;
     mpUserData = pUserData;
 
+#ifdef RAD_NO_AUDIO
+    // No audio — immediately signal completion
+    mpCallback->OnLoadFileComplete( mpUserData );
+#else
     //
     // Pass the load request on to the sound system, giving it this object
     // for notification of completion
     //
     GetSoundManager()->LoadSoundFile( filename, this );
+#endif
 }
 
 //=============================================================================

@@ -21,7 +21,9 @@
 #include <raddebug.hpp>
 #include <radtime.hpp>
 #include <raddebugwatch.hpp>
+#ifndef RAD_NO_AUDIO
 #include <radmovie2.hpp>
+#endif
 #include <p3d/utility.hpp>
 #include <p3d/context.hpp>
 #include <pddi/pddi.hpp>

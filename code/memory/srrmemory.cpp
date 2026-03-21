@@ -23,7 +23,9 @@
 #include <radthread.hpp>
 #include <raddebug.hpp>
 #include <radtextdisplay.hpp>
+#ifndef RAD_NO_AUDIO
 #include <radsound_hal.hpp>
+#endif
 #include <p3d/utility.hpp>
 
 #include <string.h>
