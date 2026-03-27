@@ -67,7 +67,11 @@
 #endif
 
 #ifdef RAD_PC
+    #ifdef __DREAMCAST__
+    #include <main/dcplatform.h>
+    #else
     #include <main/win32platform.h>
+    #endif
     #include <data/config/gameconfigmanager.h>
 #endif
 

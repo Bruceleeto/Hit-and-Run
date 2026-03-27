@@ -19,7 +19,11 @@
 #include <presentation/gui/guimenu.h>
 
 #include <data/config/gameconfigmanager.h>
+#ifdef __DREAMCAST__
+#include <main/dcplatform.h>
+#else
 #include <main/win32platform.h>
+#endif
 #include <memory/srrmemory.h>
 #include <render/RenderFlow/renderflow.h>
 

@@ -119,8 +119,14 @@ RADMATH_SRC := \
 	libs/radmath/radmath/trig.cpp \
 	libs/radmath/radmath/vector.cpp
 
+ifeq ($(PLATFORM),DC)
+RADCORE_CONTROLLER_SRC := libs/radcore/src/radcontroller/dccontroller.cpp
+else
+RADCORE_CONTROLLER_SRC := libs/radcore/src/radcontroller/sdlcontroller.cpp
+endif
+
 RADCORE_SRC := \
-	libs/radcore/src/radcontroller/sdlcontroller.cpp \
+	$(RADCORE_CONTROLLER_SRC) \
 	libs/radcore/src/raddebugcommunication/targetx.cpp \
 	libs/radcore/src/raddebugconsole/consoleclient.cpp \
 	libs/radcore/src/raddebug/debug.cpp \
@@ -179,6 +185,12 @@ RADCORE_SRC := \
 	libs/radcore/src/radtime/stopwatch.cpp \
 	libs/radcore/src/radtime/time.cpp
 
+ifeq ($(PLATFORM),DC)
+PDDI_DISPLAY_SRC := libs/pure3d/pddi/gl/display_dc/gldisplay.cpp
+else
+PDDI_DISPLAY_SRC := libs/pure3d/pddi/gl/display_win32/gldisplay.cpp
+endif
+
 PDDI_SRC := \
 	libs/pure3d/pddi/base/basecontext.cpp \
 	libs/pure3d/pddi/base/baseshader.cpp \
@@ -188,10 +200,14 @@ PDDI_SRC := \
 	libs/pure3d/pddi/gl/gldev.cpp \
 	libs/pure3d/pddi/gl/glmat.cpp \
 	libs/pure3d/pddi/gl/gltex.cpp \
-	libs/pure3d/pddi/gl/display_win32/gldisplay.cpp
+	$(PDDI_DISPLAY_SRC)
 
+ifeq ($(PLATFORM),DC)
+PDDI_C_SRC :=
+else
 PDDI_C_SRC := \
 	libs/pure3d/pddi/gl/glad/src/glad.c
+endif
 
 P3D_SRC := \
 	libs/pure3d/p3d/ambientlight.cpp \
@@ -566,6 +582,12 @@ else
 SRR2_SOUND_SRC := code/sound/soundmanager_stub.cpp
 endif
 
+ifeq ($(PLATFORM),DC)
+SRR2_PLATFORM_SRC := code/main/dcplatform.cpp
+else
+SRR2_PLATFORM_SRC := code/main/win32main.cpp code/main/win32platform.cpp
+endif
+
 SRR2_SRC := \
 	code/ai/actionbuttonhandler.cpp code/ai/actionbuttonmanager.cpp \
 	code/ai/actor/ActorAnimationUFO.cpp code/ai/actor/actoranimationwasp.cpp \
@@ -630,7 +652,7 @@ SRR2_SRC := \
 	code/loading/soundfilehandler.cpp \
 	code/main/commandlineoptions.cpp code/main/game.cpp code/main/pchsrr2.cpp \
 	code/main/singletons.cpp code/main/tuidunaligned.cpp \
-	code/main/win32main.cpp code/main/win32platform.cpp \
+	$(SRR2_PLATFORM_SRC) \
 	code/memory/classsizetracker.cpp code/memory/createheap.cpp \
 	code/memory/leakdetection.cpp code/memory/memorypool.cpp \
 	code/memory/memoryutilities.cpp code/memory/propstats.cpp code/memory/srrmemory.cpp \

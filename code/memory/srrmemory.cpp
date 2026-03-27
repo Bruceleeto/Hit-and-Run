@@ -68,9 +68,15 @@ void MemoryHackCallback() { INIT_MEM() };
 #endif
 
 #ifdef RAD_WIN32
+#ifdef __DREAMCAST__
+#include <main/dcplatform.h>
+#define INIT_MEM()  Memory::InitializeMemoryUtilities();DCPlatform::InitializeMemory();
+#define SHUTDOWN_MEM()  DCPlatform::ShutdownMemory();
+#else
 #include <main/win32platform.h>
 #define INIT_MEM()  Memory::InitializeMemoryUtilities();Win32Platform::InitializeMemory();
 #define SHUTDOWN_MEM()  Win32Platform::ShutdownMemory();
+#endif
 void MemoryHackCallback() { INIT_MEM() };
 #endif // RAD_WIN32
 

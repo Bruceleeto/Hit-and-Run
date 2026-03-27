@@ -29,7 +29,7 @@
 #include <radstring.hpp>
 #include <radobjectlist.hpp>
 
-#ifdef RAD_WIN32
+#if defined(RAD_WIN32) && !defined(__DREAMCAST__)
 #include <SDL.h>
 #ifdef WIN32
 #include <windows.h>
@@ -91,7 +91,7 @@ class radPlatform : public IRadPlatform
     {
         rDebugString( VersionString );
 
-        #ifdef RAD_WIN32        
+        #if defined(RAD_WIN32) && !defined(__DREAMCAST__)
              m_pMainWindow = NULL;
         #endif
 
@@ -116,7 +116,7 @@ class radPlatform : public IRadPlatform
         m_RefCount--;
     }
 
-#ifdef RAD_WIN32
+#if defined(RAD_WIN32) && !defined(__DREAMCAST__)
 
     //
     // Windows specific interfaces.
@@ -201,6 +201,26 @@ class radPlatform : public IRadPlatform
 #if defined(WIN32) && SDL_MAJOR_VERSION < 3
     SDL_SysWMinfo m_wmInfo;
 #endif
+
+#endif
+#ifdef __DREAMCAST__
+    //
+    // Dreamcast implementation
+    //
+    void Initialize( radMemoryAllocator allocator )
+    {
+        rAssertMsg( !m_Initialized, "radPlatform already initialized");
+        radMemoryMonitorIdentifyAllocation( this, g_nameFTech, "radPlatform" );
+        m_ThisAllocator = allocator;
+        m_Initialized = true;
+    }
+
+    void Terminate( void )
+    {
+        rAssertMsg( m_Initialized, "radPlatform not initialized");
+        rAssertMsg( m_RefCount == 0, "radPlatorm still in use" );
+        m_Initialized = false;
+    }
 
 #endif
 #ifdef RAD_XBOX
@@ -549,7 +569,7 @@ static unsigned int thePlaftormSpace[(sizeof( radPlatform ) / sizeof( unsigned i
 // parameters required for each platform.
 //
 //=============================================================================
-#ifdef RAD_WIN32
+#if defined(RAD_WIN32) && !defined(__DREAMCAST__)
 //
 // Windows requires the game provide the main window handle and the module
 // instance.
@@ -616,6 +636,14 @@ void radPlatformInitialize( void )
     pthePlatform->Initialize();
 }
 #endif // RAD_GAMECUBE
+
+#ifdef __DREAMCAST__
+void radPlatformInitialize( radMemoryAllocator allocator )
+{
+    pthePlatform = new( thePlaftormSpace ) radPlatform( );
+    pthePlatform->Construct( allocator );
+}
+#endif // __DREAMCAST__
 
 //=============================================================================
 // Function: radPlatformTerminate

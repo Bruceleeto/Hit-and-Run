@@ -5,8 +5,12 @@
 #include <gameflow/gameflow.h>
 #include <contexts/contextenum.h>
 #include <contexts/gameplay/gameplaycontext.h>
+#ifdef __DREAMCAST__
+#include <main/dcplatform.h>
+#else
 #include <main/win32platform.h>
 #include <SDL.h>
+#endif
 
 #ifdef ENABLE_DYNA_LOADED_IMAGES
 const char* DYNAMIC_RESOURCES_DIR = "art\\frontend\\dynaload\\images\\";

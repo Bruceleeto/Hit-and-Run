@@ -19,7 +19,9 @@
 #include <radobject.hpp>
 // file reading before radtech
 #include <stdio.h>
+#if !defined(__DREAMCAST__)
 #include <SDL_main.h>
+#endif
 
 #ifdef __SWITCH__
 #include <switch.h>

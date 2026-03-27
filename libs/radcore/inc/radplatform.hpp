@@ -120,7 +120,7 @@ inline float radPlatformEndian<float>( float value ) { return( value ); }
 // RAD_WIN32 Platform
 //=============================================================================
 
-#ifdef RAD_WIN32
+#if defined(RAD_WIN32) && !defined(__DREAMCAST__)
 
 //
 // Windows requires the game provide the main window handle and the module
@@ -256,6 +256,20 @@ struct IRadPlatform : public IRefCount
 };
 
 #endif // RAD_GAMECUBE
+
+//=============================================================================
+// Dreamcast Platform
+//=============================================================================
+
+#ifdef __DREAMCAST__
+
+void radPlatformInitialize( radMemoryAllocator = RADMEMORY_ALLOC_DEFAULT );
+
+struct IRadPlatform : public IRefCount
+{
+};
+
+#endif // __DREAMCAST__
 
 #endif // RADPLATFORM_HPP
 

@@ -14,7 +14,9 @@
 #include <stdlib.h>
 // #include <io.h>
 #include <pddi/base/debug.hpp>
+#ifndef __DREAMCAST__
 #include <SDL.h>
+#endif
 
 #define PDDI_GL_BUILD 36
 
@@ -76,6 +78,23 @@ int pglDevice::GetDisplayInfo(pddiDisplayInfo** info)
         return nDisplays;
     }
 
+#ifdef __DREAMCAST__
+    // Dreamcast: single fixed 640x480 display
+    displayInfo = new pddiDisplayInfo[1];
+    nDisplays = 1;
+    displayInfo[0].id = 0;
+    strcpy(displayInfo[0].description, "Dreamcast");
+    displayInfo[0].pci = 0;
+    displayInfo[0].vendor = 0;
+    displayInfo[0].fullscreenOnly = true;
+    displayInfo[0].caps = 0;
+    pddiModeInfo* displayModes = new pddiModeInfo[1];
+    displayModes[0].width = 640;
+    displayModes[0].height = 480;
+    displayModes[0].bpp = 16;
+    displayInfo[0].modeInfo = displayModes;
+    displayInfo[0].nDisplayModes = 1;
+#else
 #if SDL_MAJOR_VERSION < 3
     int totalDisplay = SDL_GetNumVideoDisplays();
 #else
@@ -139,6 +158,7 @@ int pglDevice::GetDisplayInfo(pddiDisplayInfo** info)
 #if SDL_MAJOR_VERSION > 2
     SDL_free(displayIds);
 #endif
+#endif // __DREAMCAST__
 
     return nDisplays;
 }

@@ -27,7 +27,7 @@
 #include <p3d/loadmanager.hpp>
 #include <p3d/utility.hpp>
 
-#ifdef RAD_WIN32
+#if defined(RAD_WIN32) && !defined(__DREAMCAST__)
 #include <SDL.h>  // for SDL_PollEvent...
 #endif
 
@@ -502,7 +502,7 @@ void Game::Run()
         //
         // Service the windows message loop.
         //
-#ifdef RAD_WIN32
+#if defined(RAD_WIN32) && !defined(__DREAMCAST__)
         SDL_Event msg;
         while( SDL_PollEvent( &msg ) )
         {
@@ -530,7 +530,7 @@ void Game::Run()
                 }               
             }
         }
-#endif // RAD_WIN32
+#endif
 
         //
         // Service the GameFlow and RenderFlow.

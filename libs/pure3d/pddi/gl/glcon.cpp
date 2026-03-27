@@ -12,7 +12,9 @@
 #include <pddi/base/debug.hpp>
 #include <math.h>
 #include <string.h>
+#ifndef __DREAMCAST__
 #include <SDL.h>
+#endif
 
 #include <microprofile.h>
 
@@ -103,7 +105,9 @@ void pglContext::BeginFrame()
 {
     pddiBaseContext::BeginFrame();
 
+#ifndef __DREAMCAST__
     SDL_GL_SetSwapInterval(display->GetForceVSync() ? 1 : 0);
+#endif
 
     if(display->HasReset())
     {
