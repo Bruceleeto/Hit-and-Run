@@ -367,28 +367,37 @@ void Game::Initialize()
     //
     // Initialize the platform and core systems.
     //
+    printf("DC_DBG: InitializePlatform...\n");
     mpPlatform->InitializePlatform();
+    printf("DC_DBG: InitializePlatform done\n");
 
     //
     // Initialize the sound manager.
     //
+    printf("DC_DBG: SoundManager init...\n");
     SoundManager::GetInstance()->Initialize();
-    
+    printf("DC_DBG: SoundManager done\n");
+
     //
     // Initialize the timer system
     //
+    printf("DC_DBG: radTimeCreateList...\n");
     ::radTimeCreateList( &mpTimerList,
                          16, // Default
                          GMA_PERSISTENT );
 
     rAssert( mpTimerList != NULL );
+    printf("DC_DBG: TimerList done\n");
 
     //
     // Create the GameFlow & Couple the RenderFlow
     //
+    printf("DC_DBG: GameFlow create...\n");
     mpGameFlow = GameFlow::CreateInstance();
+    printf("DC_DBG: RenderFlow...\n");
     mpRenderFlow = RenderFlow::GetInstance();
     mpRenderFlow->DoAllRegistration();
+    printf("DC_DBG: RenderFlow done\n");
 
     CGuiScreenMissionLoad::InitializePermanentVariables();
 
@@ -399,7 +408,9 @@ void Game::Initialize()
     //
     // Set the starting context
     //
+    printf("DC_DBG: SetContext BOOTUP...\n");
     mpGameFlow->SetContext( CONTEXT_BOOTUP );
+    printf("DC_DBG: Game::Initialize() done\n");
 }
 
 

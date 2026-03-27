@@ -121,7 +121,7 @@ void pglContext::BeginFrame()
         glCullFace(GL_FRONT);
         glColor4f(1,1,1,1);
 
-#if !defined RAD_GLES && !defined RAD_VITAGL
+#if !defined RAD_GLES && !defined RAD_VITAGL && !defined __DREAMCAST__
         glEnable(GL_DITHER);
 
         if(display->CheckExtension("GL_EXT_separate_specular_color"))
@@ -162,7 +162,9 @@ void pglContext::Clear(unsigned bufferMask)
                      float(state.viewState->clearColour.Green())/255.0f, 
                      float(state.viewState->clearColour.Blue())/255.0f,
                      float(state.viewState->clearColour.Alpha())/255.0f);
+#ifndef __DREAMCAST__
     glClearStencil(state.viewState->clearStencil);
+#endif
     glClear(myClearMask);
 }
 
@@ -355,8 +357,6 @@ void pglContext::EndPrims(pddiPrimStream* stream)
     pddiBaseContext::EndPrims(stream);
     pglPrimStream* glstream = (pglPrimStream*)stream;
 
-    glBindBuffer( GL_ARRAY_BUFFER, 0 );
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
     glVertexPointer( 3, GL_FLOAT, 0, glstream->coords.data() );
 
     if( !glstream->normals.empty() )
@@ -740,30 +740,12 @@ void pglPrimBuffer::Display(void)
 {
     MICROPROFILE_SCOPEI("PDDI", "pglPrimBuffer::Display", MP_RED);
 
-    if(!vertexBuffer)
-    {
-        glGenBuffers(1, &vertexBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, mem, NULL, GL_DYNAMIC_DRAW);
-    }
-    else
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    }
-    
-    GLintptr offset = 0;
-    if( !valid )
-        glBufferSubData( GL_ARRAY_BUFFER, offset, allocated*12, coord );
-    glVertexPointer(3,GL_FLOAT,0,(void*)offset);
-    offset += allocated*12;
+    glVertexPointer(3, GL_FLOAT, 0, coord);
 
     if(vertexType & PDDI_V_NORMAL)
     {
-        if(!valid)
-            glBufferSubData(GL_ARRAY_BUFFER,offset,allocated*12,normal);
         glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT,0,(void*)offset);
-        offset += allocated*12;
+        glNormalPointer(GL_FLOAT, 0, normal);
     }
     else
     {
@@ -772,11 +754,8 @@ void pglPrimBuffer::Display(void)
 
     if(vertexType & PDDI_V_COLOUR)
     {
-        if(!valid)
-            glBufferSubData(GL_ARRAY_BUFFER,offset,allocated*4,colour);
         glEnableClientState(GL_COLOR_ARRAY);
-        glColorPointer(4,GL_UNSIGNED_BYTE,0,(void*)offset);
-        offset += allocated*4;
+        glColorPointer(4, GL_UNSIGNED_BYTE, 0, colour);
     }
     else
     {
@@ -785,11 +764,8 @@ void pglPrimBuffer::Display(void)
 
     if(vertexType & 0xf)
     {
-        if(!valid)
-            glBufferSubData(GL_ARRAY_BUFFER,offset,allocated*8,uv);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2,GL_FLOAT,0,(void*)offset);
-        offset += allocated*8;
+        glTexCoordPointer(2, GL_FLOAT, 0, uv);
     }
     else
     {
@@ -798,24 +774,10 @@ void pglPrimBuffer::Display(void)
 
     if(indexCount && indices)
     {
-        if(!indexBuffer)
-        {
-            glGenBuffers(1, &indexBuffer);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,indexBuffer);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER,indexCount*sizeof(unsigned short),NULL,GL_DYNAMIC_DRAW);
-        }
-        else
-        {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,indexBuffer);
-        }
-
-        if(!valid)
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,0,indexCount*sizeof(unsigned short),indices);
-        glDrawElements(primTypeTable[primType],indexCount,GL_UNSIGNED_SHORT,0);
+        glDrawElements(primTypeTable[primType], indexCount, GL_UNSIGNED_SHORT, indices);
     }
     else
     {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
         glDrawArrays(primTypeTable[primType], 0, total);
     }
 
@@ -857,7 +819,7 @@ int pglContext::GetMaxLights(void)
 
 void pglContext::SetupHardwareLight(int handle)
 {
-    GLenum h = GLenum(GL_LIGHT0 + handle);
+    GLenum h = (GLenum)(GL_LIGHT0 + handle);
     
     if(state.lightingState->light[handle].enabled)
         glEnable(h);
@@ -1026,7 +988,9 @@ void pglContext::SetStencilMask(unsigned mask)
 void pglContext::SetStencilWriteMask(unsigned mask)
 {
     pddiBaseContext::SetStencilWriteMask(mask);
+#ifndef __DREAMCAST__
     glStencilMask(mask);
+#endif
 }
 
 void pglContext::SetStencilOp(pddiStencilOp failOp, pddiStencilOp zFailOp, pddiStencilOp zPassOp)

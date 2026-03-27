@@ -24,7 +24,11 @@ radThreadSemaphore::radThreadSemaphore( unsigned int count )
     m_ReferenceCount( 1 )
 {
     radMemoryMonitorIdentifyAllocation( this, g_nameFTech, "radThreadSemaphore" );
+#ifdef __DREAMCAST__
+    sem_init( &m_Semaphore, count );
+#else
     sem_init( &m_Semaphore, 0, count );
+#endif
 }
 
 radThreadSemaphore::~radThreadSemaphore( void )
@@ -39,7 +43,11 @@ void radThreadSemaphore::Wait( void )
 
 void radThreadSemaphore::Signal( void )
 {
+#ifdef __DREAMCAST__
+    sem_signal( &m_Semaphore );
+#else
     sem_post( &m_Semaphore );
+#endif
 }
 
 void radThreadSemaphore::AddRef( void )

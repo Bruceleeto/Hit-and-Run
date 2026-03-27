@@ -13,7 +13,11 @@
 
 static bool g_SystemInitialized = false;
 
+#ifdef __DREAMCAST__
+static pthread_mutex_t g_ExclusionObject = {};
+#else
 static pthread_mutex_t g_ExclusionObject = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 void radThreadInitialize( unsigned int milliseconds )
 {

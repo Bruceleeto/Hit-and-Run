@@ -94,6 +94,20 @@ GLenum alphaCompareTable[8] =
     GL_NOTEQUAL
 };
 
+#ifdef __DREAMCAST__
+// GLdc has no blend equations — just src/dst factors (columns 1 & 2)
+GLenum alphaBlendTable[8][3] =
+{
+    { 0, GL_ONE, GL_ZERO },                       //PDDI_BLEND_NONE,
+    { 0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA },  //PDDI_BLEND_ALPHA
+    { 0, GL_ONE, GL_ONE },                        //PDDI_BLEND_ADD
+    { 0, GL_ONE, GL_ONE },                        //PDDI_BLEND_SUBTRACT (no reverse subtract)
+    { 0, GL_DST_COLOR, GL_ZERO },                 //PDDI_BLEND_MODULATE,
+    { 0, GL_DST_COLOR, GL_SRC_COLOR},             //PDDI_BLEND_MODULATE2,
+    { 0, GL_ONE, GL_SRC_ALPHA},                   //PDDI_BLEND_ADDMODULATEALPHA,
+    { 0, GL_SRC_ALPHA, GL_SRC_ALPHA}              //PDDI_BLEND_SUBMODULATEALPHA
+};
+#else
 GLenum alphaBlendTable[8][3] =
 {
     { GL_FUNC_ADD, GL_ONE, GL_ZERO },                       //PDDI_BLEND_NONE,
@@ -105,6 +119,7 @@ GLenum alphaBlendTable[8][3] =
     { GL_FUNC_ADD, GL_ONE, GL_SRC_ALPHA},                   //PDDI_BLEND_ADDMODULATEALPHA,
     { GL_FUNC_REVERSE_SUBTRACT, GL_SRC_ALPHA, GL_SRC_ALPHA} //PDDI_BLEND_SUBMODULATEALPHA
 };
+#endif
 
 static inline void FillGLColour(pddiColour c, float* f)
 {
@@ -318,7 +333,9 @@ void pglMat::SetDevPass(unsigned pass)
     else
     {
         glEnable(GL_BLEND);
-#ifdef RAD_GLES
+#ifdef __DREAMCAST__
+        // GLdc: no blend equation support, just use glBlendFunc
+#elif defined(RAD_GLES)
         if(context->GetDisplay()->ExtBlend())
             glBlendEquationSeparateOES(alphaBlendTable[texEnv[i].alphaBlendMode][0],alphaBlendTable[texEnv[i].alphaBlendMode][0]);
 #else

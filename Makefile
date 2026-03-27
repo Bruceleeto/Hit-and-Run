@@ -27,17 +27,17 @@ CC  := kos-cc
 AR  := kos-ar rcs
 AUDIO := 0
 
-CFLAGS_COMMON := -Os -ffast-math -ffp-contract=fast -mfsrra -mfsca \
-	-ffunction-sections -fdata-sections -flto -fno-omit-frame-pointer \
+CFLAGS_COMMON := -O1 -ffast-math -ffp-contract=fast -mfsrra -mfsca \
+	-ffunction-sections -fdata-sections -fno-omit-frame-pointer \
 	-fno-strict-aliasing -fwrapv -fno-delete-null-pointer-checks \
 	-fvisibility=hidden \
-	-DRAD_CONSOLE -DRAD_WIN32 -DRAD_SDL -DRAD_RELEASE -DDREAMCAST -DRAD_NO_AUDIO
+	-DRAD_CONSOLE -DRAD_WIN32 -DRAD_SDL -DRAD_DEBUG -DDREAMCAST -DRAD_NO_AUDIO
 
 CXXFLAGS := $(CFLAGS_COMMON) -std=gnu++17
 CFLAGS   := $(CFLAGS_COMMON) -std=gnu11
 
-LDFLAGS := -Wl,--gc-sections -flto
-LIBS := -lm $(KOS_LIBS)
+LDFLAGS := -Wl,--gc-sections
+LIBS := -lGL -lpng -lz -lpthread -lm $(KOS_LIBS)
 
 SDL2_CFLAGS   :=
 SDL2_LIBS     :=
@@ -187,8 +187,10 @@ RADCORE_SRC := \
 
 ifeq ($(PLATFORM),DC)
 PDDI_DISPLAY_SRC := libs/pure3d/pddi/gl/display_dc/gldisplay.cpp
+PDDI_DECOMPRESS_SRC := libs/pure3d/pddi/gl/decompress.cpp
 else
 PDDI_DISPLAY_SRC := libs/pure3d/pddi/gl/display_win32/gldisplay.cpp
+PDDI_DECOMPRESS_SRC :=
 endif
 
 PDDI_SRC := \
@@ -200,6 +202,7 @@ PDDI_SRC := \
 	libs/pure3d/pddi/gl/gldev.cpp \
 	libs/pure3d/pddi/gl/glmat.cpp \
 	libs/pure3d/pddi/gl/gltex.cpp \
+	$(PDDI_DECOMPRESS_SRC) \
 	$(PDDI_DISPLAY_SRC)
 
 ifeq ($(PLATFORM),DC)
@@ -207,6 +210,12 @@ PDDI_C_SRC :=
 else
 PDDI_C_SRC := \
 	libs/pure3d/pddi/gl/glad/src/glad.c
+endif
+
+ifeq ($(PLATFORM),DC)
+P3D_PLATFORM_SRC := libs/pure3d/p3d/platform/dc/platform.cpp
+else
+P3D_PLATFORM_SRC := libs/pure3d/p3d/platform/win32/platform.cpp
 endif
 
 P3D_SRC := \
@@ -285,7 +294,7 @@ P3D_SRC := \
 	libs/pure3d/p3d/memheap.cpp \
 	libs/pure3d/p3d/memory.cpp \
 	libs/pure3d/p3d/memorysection.cpp \
-	libs/pure3d/p3d/platform/win32/platform.cpp \
+	$(P3D_PLATFORM_SRC) \
 	libs/pure3d/p3d/png.cpp \
 	libs/pure3d/p3d/pointcamera.cpp \
 	libs/pure3d/p3d/pointlight.cpp \
@@ -583,7 +592,7 @@ SRR2_SOUND_SRC := code/sound/soundmanager_stub.cpp
 endif
 
 ifeq ($(PLATFORM),DC)
-SRR2_PLATFORM_SRC := code/main/dcplatform.cpp
+SRR2_PLATFORM_SRC := code/main/dcmain.cpp code/main/dcplatform.cpp
 else
 SRR2_PLATFORM_SRC := code/main/win32main.cpp code/main/win32platform.cpp
 endif

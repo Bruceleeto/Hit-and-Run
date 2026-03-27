@@ -303,9 +303,11 @@ class pddiDisplay : public pddiObject
 {
 public:
 
-#if defined( RAD_WIN32 ) || defined( RAD_LINUX )
+#if (defined( RAD_WIN32 ) || defined( RAD_LINUX )) && !defined(__DREAMCAST__)
    PDDI_INTERFACE long ProcessWindowMessage(SDL_Window* win, const SDL_WindowEvent* event) PDDI_PURE;
    PDDI_INTERFACE void SetWindow(SDL_Window* win) PDDI_PURE;
+#endif
+#if defined( RAD_WIN32 ) || defined( RAD_LINUX )
    PDDI_INTERFACE pddiDisplayInfo* GetDisplayInfo(void) PDDI_PURE;
 #endif
    PDDI_INTERFACE bool InitDisplay(int x, int y, int bpp) PDDI_PURE;

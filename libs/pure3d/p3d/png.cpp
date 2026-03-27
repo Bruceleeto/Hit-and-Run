@@ -12,7 +12,11 @@
 #include <p3d/file.hpp>
 #include <p3d/utility.hpp>
 
+#ifdef __DREAMCAST__
+#include <png/png.h>
+#else
 #include <png.h>
+#endif
 
 static void LoadPNG4(png_structp, png_infop, tImageHandler::Builder*);
 static void LoadPNG8(png_structp, png_infop, tImageHandler::Builder*);

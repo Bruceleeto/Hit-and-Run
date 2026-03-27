@@ -8,6 +8,15 @@
 #ifdef RAD_VITAGL
 #include <vitaGL.h>
 #define GL_BGRA_EXT GL_BGRA
+#elif defined(__DREAMCAST__)
+#include <GL/gl.h>
+#include <GL/glext.h>
+#include <GL/glkos.h>
+
+#ifndef GL_BGRA_EXT
+#define GL_BGRA_EXT GL_BGRA
+#endif
+
 #else
 #include <glad/glad.h>
 #endif

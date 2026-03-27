@@ -8,7 +8,11 @@
 #include <radobject.hpp>
 #include <radmemory.hpp>
 #include <radthread.hpp>
+#ifdef __DREAMCAST__
+#include <kos.h>
+#else
 #include <semaphore.h>
+#endif
 
 class radThreadSemaphore : public IRadThreadSemaphore,
                            public radObject
@@ -32,7 +36,11 @@ class radThreadSemaphore : public IRadThreadSemaphore,
 
     unsigned int m_ReferenceCount;
 
+#ifdef __DREAMCAST__
+    semaphore_t m_Semaphore;
+#else
     sem_t m_Semaphore;
+#endif
 };
 
 #endif

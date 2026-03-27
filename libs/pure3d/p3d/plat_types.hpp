@@ -22,7 +22,9 @@
     #include <p3d/platform/GameCube/plat_types.hpp>
 #endif
 
-#ifdef RAD_WIN32
+#ifdef __DREAMCAST__
+    #include <p3d/platform/dc/plat_types.hpp>
+#elif defined(RAD_WIN32)
     #include <p3d/platform/win32/plat_types.hpp>
 #endif
 

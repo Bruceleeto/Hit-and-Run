@@ -32,7 +32,7 @@ static inline GLenum PickPixelFormat(pddiPixelFormat format)
     case PDDI_PIXEL_LUM8: return GL_LUMINANCE8;
     case PDDI_PIXEL_DUDV88: return GL_LUMINANCE8_ALPHA8;
 #endif
-#if defined(RAD_GLES)
+#if defined(RAD_GLES) || defined(__DREAMCAST__)
     case PDDI_PIXEL_DXT1: return GL_RGBA;
     case PDDI_PIXEL_DXT3: return GL_RGBA;
     case PDDI_PIXEL_DXT5: return GL_RGBA;
@@ -93,7 +93,7 @@ static inline pddiPixelFormat PickPixelFormat(pddiTextureType type, int bitDepth
     return PDDI_PIXEL_UNKNOWN;
 };
 
-#if defined(RAD_GLES)
+#if defined(RAD_GLES) || defined(__DREAMCAST__)
 #include "decompress.h"
 #endif
 
@@ -117,7 +117,7 @@ void pglTexture::SetGLState(void)
 //      if(nMipMap == 0)
         if (type == PDDI_TEXTYPE_DXT1 || type == PDDI_TEXTYPE_DXT3 || type == PDDI_TEXTYPE_DXT5)
         {
-#if defined(RAD_GLES)
+#if defined(RAD_GLES) || defined(__DREAMCAST__)
             unsigned char* image = new unsigned char[xSize * ySize * 4];
             unsigned int blocksize = lock.format == PDDI_PIXEL_DXT1 ? 8 : 16;
             if (type == PDDI_TEXTYPE_DXT1)
@@ -203,7 +203,7 @@ void pglTexture::SetGLState(void)
         glBindTexture(GL_TEXTURE_2D, gltexture);
     }
 
-#if !defined RAD_GLES && !defined RAD_VITAGL
+#if !defined RAD_GLES && !defined RAD_VITAGL && !defined __DREAMCAST__
     float fpriority = float(priority) / 31.0f;
     glPrioritizeTextures(1, &gltexture, &fpriority);
 #endif
