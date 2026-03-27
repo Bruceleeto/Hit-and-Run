@@ -169,7 +169,11 @@ extern radLoadManagerWrapper radLoad;
 struct radLoadInit
 {
     // Constructor to fill in the default variables
+#ifdef __DREAMCAST__
+    radLoadInit() : fileLoaderListSize( 64 ), dataLoaderListSize( 256 ), loadQueueSize( 32 ), loadThreadStackSize( 64 ) {};
+#else
     radLoadInit() : fileLoaderListSize( 64 ), dataLoaderListSize( 256 ), loadQueueSize( 32 ), loadThreadStackSize( 65536 ) {};
+#endif
 
     ///@{ Sets the loader list size limit.
     /// \attention Must be a power of two.
