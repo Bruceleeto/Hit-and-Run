@@ -168,6 +168,8 @@ void pglContext::Clear(unsigned bufferMask)
     glClear(myClearMask);
 }
 
+// DC: SH4 -O1 with -ffast-math eliminates float negations in glOrtho/glFrustum args.
+__attribute__((optimize("Og")))
 void pglContext::SetupHardwareProjection(void)
 {
     switch(state.viewState->projectionMode)

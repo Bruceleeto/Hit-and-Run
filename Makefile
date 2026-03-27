@@ -9,7 +9,7 @@
 #   make clean
 
 # Platform: LINUX or DC (default: LINUX)
-PLATFORM ?= DC
+PLATFORM ?= LINUX
 
 # Set to 0 to build without OpenAL audio support (forced off on DC)
 AUDIO ?= 0

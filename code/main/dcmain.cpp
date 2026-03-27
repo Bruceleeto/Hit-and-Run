@@ -40,6 +40,8 @@ KOS_INIT_FLAGS(INIT_DEFAULT | INIT_CONTROLLER);
 
 extern "C" int main( int argc, char *argv[] )
 {
+    chdir( "/pc" );
+
     CommandLineOptions::InitDefaults();
     ProcessCommandLineArguments( argc, argv );
     ProcessCommandLineArgumentsFromFile();
