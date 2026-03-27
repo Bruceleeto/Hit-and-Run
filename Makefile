@@ -875,7 +875,7 @@ else
 AUDIO_LINK :=
 endif
 
-TARGET := $(BUILDDIR)/SRR2
+TARGET := $(ROOT)base/SRR2
 
 # =============================================================================
 # Rules
@@ -930,4 +930,4 @@ $(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(I_ALL) -c -o $@ $<
 
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(BUILDDIR) $(TARGET)
