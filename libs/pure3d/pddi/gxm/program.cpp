@@ -10,7 +10,6 @@
 
 #include <string>
 #include <vector>
-#include <SDL.h>
 
 static inline void UniformColour(void* buffer, const SceGxmProgramParameter* param, pddiColour c)
 {

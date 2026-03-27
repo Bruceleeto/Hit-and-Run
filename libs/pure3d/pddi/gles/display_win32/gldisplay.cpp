@@ -129,16 +129,16 @@ MessageCallback(GLenum source,
     switch(severity)
     {
         case GL_DEBUG_SEVERITY_HIGH_KHR:
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            fprintf(stderr, "GL ERROR: %s\n", message);
             break;
         case GL_DEBUG_SEVERITY_MEDIUM_KHR:
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            fprintf(stderr, "GL WARN: %s\n", message);
             break;
         case GL_DEBUG_SEVERITY_LOW_KHR:
-            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            printf("GL INFO: %s\n", message);
             break;
         case GL_DEBUG_SEVERITY_NOTIFICATION_KHR:
-            SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            printf("GL VERBOSE: %s\n", message);
             break;
     }
 }
@@ -209,7 +209,7 @@ bool pglDisplay ::InitDisplay(const pddiDisplayInit* init)
     prevRC = SDL_GL_GetCurrentContext();
     hRC = SDL_GL_CreateContext(win);
     if (!hRC)
-        SDL_Log("SDL_GL_CreateContext() error: %s", SDL_GetError());
+        fprintf(stderr, "SDL_GL_CreateContext() error: %s\n", SDL_GetError());
     PDDIASSERT(hRC);
 
 #ifdef RAD_CG
@@ -240,17 +240,17 @@ bool pglDisplay ::InitDisplay(const pddiDisplayInit* init)
             if(*walk == ' ')
             {
                 *walk = 0;
-                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", last);
+                printf("%s\n", last);
                 last = walk+1;
             }
             walk++;
         }
-        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", last);
+        printf("%s\n", last);
     }
 
     extBGRA = CheckExtension("GL_EXT_bgra") || CheckExtension("GL_EXT_texture_format_BGRA8888");
 
-    SDL_Log("OpenGL - Vendor: %s, Renderer: %s, Version: %s",glVendor,glRenderer,glVersion);
+    printf("OpenGL - Vendor: %s, Renderer: %s, Version: %s\n",glVendor,glRenderer,glVersion);
 
 #if defined RAD_DEBUG && !defined RAD_VITA
     glEnable(GL_DEBUG_OUTPUT_KHR);

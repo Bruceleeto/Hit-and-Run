@@ -49,16 +49,6 @@ static void ProcessCommandLineArguments( int argc, char *argv[] );
 
 static void ProcessCommandLineArgumentsFromFile();
 
-static void LogOutputFunction( void *userdata, int category, SDL_LogPriority priority, const char *message )
-{
-#ifdef RAD_VITA
-    sceClibPrintf( "%s\n", message );
-#else
-    printf( "%s\n", message );
-    fflush( stdout );
-#endif
-}
-
 //=============================================================================
 // Function:    WinMain
 //=============================================================================
@@ -95,12 +85,8 @@ extern "C" int main( int argc, char *argv[] )
     //
 #if SDL_MAJOR_VERSION < 3
     SDL_Init( SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER );
-
-    SDL_LogSetOutputFunction( LogOutputFunction, NULL );
 #else
     SDL_Init( SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD );
-
-    SDL_SetLogOutputFunction( LogOutputFunction, NULL );
 #endif
 
     //

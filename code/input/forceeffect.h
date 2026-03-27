@@ -15,7 +15,6 @@
 //========================================
 // Nested Includes
 //========================================
-#include <SDL.h>
 #include <radcontroller.hpp>
 
 #ifdef WIN32

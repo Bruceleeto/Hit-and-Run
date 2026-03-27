@@ -11,7 +11,6 @@
 
 #include <vector>
 #include <microprofile.h>
-#include <SDL.h>
 
 pddiShadeColourTable gxmMat::colourTable[] = 
 {

@@ -1,17 +1,55 @@
-# Simpsons Hit & Run - Linux Makefile
+# Simpsons Hit & Run - Makefile
 # Desktop OpenGL, 32-bit, NTSC
 #
 # Usage:
 #   make -j$(nproc)
-#   make AUDIO=0 -j$(nproc)   # build without OpenAL audio
+#   make AUDIO=0 -j$(nproc)           # Linux, no audio
+#   make PLATFORM=DC -j$(nproc)       # Dreamcast build
+#   make PLATFORM=DC cdi -j$(nproc)   # Dreamcast + CDI disc image
 #   make clean
 
-# Set to 0 to build without OpenAL audio support
-AUDIO ?= 1
+# Platform: LINUX or DC (default: LINUX)
+PLATFORM ?= LINUX
+
+# Set to 0 to build without OpenAL audio support (forced off on DC)
+AUDIO ?= 0
 
 ROOT     := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BUILDDIR := $(ROOT)build-mk
 
+# -----------------------------------------------------------------------------
+# Dreamcast (KallistiOS)
+# -----------------------------------------------------------------------------
+ifeq ($(PLATFORM),DC)
+include $(KOS_BASE)/Makefile.rules
+CXX := kos-c++
+CC  := kos-cc
+AR  := kos-ar rcs
+AUDIO := 0
+
+CFLAGS_COMMON := -Os -ffast-math -ffp-contract=fast -mfsrra -mfsca \
+	-ffunction-sections -fdata-sections -flto -fno-omit-frame-pointer \
+	-fno-strict-aliasing -fwrapv -fno-delete-null-pointer-checks \
+	-fvisibility=hidden \
+	-DRAD_CONSOLE -DRAD_WIN32 -DRAD_SDL -DRAD_RELEASE -DDREAMCAST -DRAD_NO_AUDIO
+
+CXXFLAGS := $(CFLAGS_COMMON) -std=gnu++17
+CFLAGS   := $(CFLAGS_COMMON) -std=gnu11
+
+LDFLAGS := -Wl,--gc-sections -flto
+LIBS := -lm $(KOS_LIBS)
+
+SDL2_CFLAGS   :=
+SDL2_LIBS     :=
+PNG_CFLAGS    :=
+PNG_LIBS      :=
+OPENAL_CFLAGS :=
+OPENAL_LIBS   :=
+
+# -----------------------------------------------------------------------------
+# Linux / Desktop
+# -----------------------------------------------------------------------------
+else
 CXX := g++
 CC  := gcc
 AR  := ar rcs
@@ -45,6 +83,7 @@ CFLAGS   := $(CFLAGS_COMMON) -std=gnu11
 endif
 
 LIBS := $(OPENAL_LIBS) $(SDL2_LIBS) $(PNG_LIBS) -lpthread
+endif
 
 I_RADCORE    := -I$(ROOT)libs/radcore/inc -I$(ROOT)libs/radcore/src/pch -I$(ROOT)code
 I_RADMATH    := -I$(ROOT)libs/radmath
@@ -875,15 +914,24 @@ else
 AUDIO_LINK :=
 endif
 
+ifeq ($(PLATFORM),DC)
+TARGET := $(ROOT)base/SRR2.elf
+else
 TARGET := $(ROOT)base/SRR2
+endif
 
 # =============================================================================
 # Rules
 # =============================================================================
 
-.PHONY: all clean
+.PHONY: all clean cdi
 
 all: $(TARGET)
+
+ifeq ($(PLATFORM),DC)
+cdi: $(TARGET)
+	mkdcdisc -e $(TARGET) -D $(ROOT)base -o SRR2.cdi -N
+endif
 
 $(TARGET): $(SRR2_OBJ) $(ALL_LIBS)
 	$(CXX) $(LDFLAGS) -o $@ $(SRR2_OBJ) \
@@ -930,4 +978,8 @@ $(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(I_ALL) -c -o $@ $<
 
 clean:
-	rm -rf $(BUILDDIR) $(TARGET)
+	rm -rf $(BUILDDIR)
+	rm -f $(TARGET)
+ifeq ($(PLATFORM),DC)
+	rm -f SRR2.cdi
+endif

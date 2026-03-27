@@ -2,7 +2,7 @@
  * choreo/load.cpp
  */
 
-#include <SDL.h>
+#include <strings.h>
 
 #include <choreo/load.hpp>
 #include <choreo/scriptreader.hpp>
@@ -527,7 +527,7 @@ public:
         int extLen = strlen(CHOREO_SCRIPT_EXTENSION);
         if (len >= extLen)
         {
-            if (SDL_strcasecmp(CHOREO_SCRIPT_EXTENSION, &fileName[len - extLen]) == 0)
+            if (strcasecmp(CHOREO_SCRIPT_EXTENSION, &fileName[len - extLen]) == 0)
                 return true;
         }
 
@@ -536,7 +536,7 @@ public:
             extLen = strlen(CHOREO_SCRIPT_EXTENSION_OLD);
             if (len >= extLen)
             {
-                if (SDL_strcasecmp(CHOREO_SCRIPT_EXTENSION_OLD, &fileName[len - extLen]) == 0)
+                if (strcasecmp(CHOREO_SCRIPT_EXTENSION_OLD, &fileName[len - extLen]) == 0)
                     return true;
             }
         }

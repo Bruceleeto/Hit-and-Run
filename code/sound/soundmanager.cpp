@@ -13,7 +13,6 @@
 //========================================
 // System Includes
 //========================================
-#include <SDL.h>
 #include <radfactory.hpp>
 
 //========================================
@@ -57,7 +56,8 @@
 #include <data/config/gameconfigmanager.h>
 #endif
 
-#define _stricmp SDL_strcasecmp
+#include <strings.h>
+#define _stricmp strcasecmp
 
 //******************************************************************************
 //

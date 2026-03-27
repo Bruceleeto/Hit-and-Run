@@ -16,8 +16,13 @@
 #include <string.h>
 // Foundation Tech
 #include <raddebug.hpp>
-#include <SDL.h>
-#define strupr SDL_strupr
+#include <ctype.h>
+static char* strupr_inline( char* s )
+{
+    for( char* p = s; *p; ++p ) *p = (char)toupper( (unsigned char)*p );
+    return s;
+}
+#define strupr strupr_inline
 
 //========================================
 // Project Includes

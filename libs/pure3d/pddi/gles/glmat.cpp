@@ -10,7 +10,6 @@
 
 #include <vector>
 #include <microprofile.h>
-#include <SDL.h>
 
 pddiShadeColourTable pglMat::colourTable[] = 
 {

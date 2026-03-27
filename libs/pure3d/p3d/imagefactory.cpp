@@ -2,7 +2,7 @@
 // Copyright (c) 2002 Radical Games Ltd.  All rights reserved.
 //=============================================================================
 
-#include <SDL.h>
+#include <strings.h>
 
 #include <p3d/imagefactory.hpp>
 #include <p3d/context.hpp>
@@ -522,7 +522,7 @@ bool tImageHandler::CheckExtension(char* ext)
     if(len < handlerLen)
         return false;
 
-    if(SDL_strcasecmp(handler, &ext[len-handlerLen]) == 0)
+    if(strcasecmp(handler, &ext[len-handlerLen]) == 0)
         return true;
   
     return false;

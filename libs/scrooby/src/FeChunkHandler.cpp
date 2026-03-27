@@ -13,7 +13,7 @@
 // Includes
 //===========================================================================
 
-#include <SDL.h>
+#include <strings.h>
 
 #include <p3d/chunkfile.hpp>
 #include <p3d/inventory.hpp>
@@ -698,17 +698,17 @@ FeText* FeProjectChunkHandler::LoadTextChunk( tChunkFile* file )
     //
 
     if( 
-        ( SDL_strcasecmp( name , "Message" )             == 0 ) ||
-        ( SDL_strcasecmp( name , "MissionObjective" )    == 0 )
+        ( strcasecmp( name , "Message" )             == 0 ) ||
+        ( strcasecmp( name , "MissionObjective" )    == 0 )
       )
     {
         returnMe->Resize( 512 );
     }
     else if( 
-        ( SDL_strcasecmp( name , "Car_Value" )           == 0 ) ||
-        ( SDL_strcasecmp( name , "MissionFailureHint" )  == 0 ) ||
-        ( SDL_strcasecmp( name , "MissionInfo" )         == 0 ) ||
-        ( SDL_strcasecmp( name , "MissionTitle" )        == 0 )
+        ( strcasecmp( name , "Car_Value" )           == 0 ) ||
+        ( strcasecmp( name , "MissionFailureHint" )  == 0 ) ||
+        ( strcasecmp( name , "MissionInfo" )         == 0 ) ||
+        ( strcasecmp( name , "MissionTitle" )        == 0 )
         )
     {
         returnMe->Resize( 128 );

@@ -8,7 +8,7 @@
 
 #include <string>
 #include <vector>
-#include <SDL.h>
+#include <stdio.h>
 
 #ifdef RAD_CG
 #define CGGL_NO_OPENGL
@@ -21,7 +21,7 @@ void pglProgram::checkForCgError()
     const char* string = cgGetLastErrorString(&error);
 
     if (error != CG_NO_ERROR) {
-        SDL_Log("%s\n", string);
+        printf("%s\n", string);
         if (error == CG_COMPILER_ERROR) {
             printf("%s\n", cgGetLastListing(pglProgram::context));
         }
@@ -280,7 +280,7 @@ bool pglProgram::LinkProgram(GLuint vertexShader, GLuint fragmentShader)
         std::vector<GLchar> infoLog(maxLength);
         glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
 
-        SDL_Log("Program linking error: %s", infoLog.data());
+        printf("Program linking error: %s", infoLog.data());
         return false;
     }
     
@@ -369,7 +369,7 @@ GLuint pglProgram::CompileShader(GLenum type, const char* source)
         // We don't need the shader anymore.
         glDeleteShader(shader);
 
-        SDL_Log("Shader compilation error: %s", infoLog.data());
+        printf("Shader compilation error: %s", infoLog.data());
         return 0;
     }
     return shader;

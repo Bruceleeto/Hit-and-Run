@@ -2,7 +2,6 @@
 // Copyright (c) 2002 Radical Games Ltd.  All rights reserved.
 //=============================================================================
 
-#include <SDL.h>
 
 #include <p3d/loadmanager.hpp>
 #include <p3d/inventory.hpp>
@@ -15,6 +14,7 @@
 #include <constants/chunks.h>
 #include <p3d/queue.hpp>
 #include <string.h>
+#include <strings.h>
 
 #ifdef P3D_TRACK_LOAD_STATS
 #include <radmemory.hpp>
@@ -142,14 +142,14 @@ bool tP3DFileHandler::CheckExtension(char* file)
         
         if(len >= extLen)
         {
-            if(SDL_strcasecmp(extensions[i], &file[len-extLen]) == 0)
+            if(strcasecmp(extensions[i], &file[len-extLen]) == 0)
                 return true;
         }
         if(len == extLen-1)
         {
           if(strcmp(&extensions[i][1], &file[len-extLen+1]) == 0)
               return true;
-          if(SDL_strcasecmp(&extensions[i][1], &file[len-extLen+1]) == 0)
+          if(strcasecmp(&extensions[i][1], &file[len-extLen+1]) == 0)
               return true;
         }
     }
